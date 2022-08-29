@@ -1,8 +1,8 @@
 #!/bin/bash
 #注意这里要声明环境变量，不然不识别kubectl命令
 PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-nameSpace="kuboard"
-pod=$(kubectl get pod -n springcloud |awk '{print $1}');
+nameSpace="default"
+pod=$(kubectl get pod -n default |awk '{print $1}');
 for i in $pod;
 do
 	if [ $i = 'NAME' ]
@@ -25,7 +25,7 @@ echo -e """
 |--------------------------------------------------
 |  统计环境 | 测试K8s                       
 |--------------------------------------------------
-|  名称空间 | shimaoiot                     
+|  名称空间 | default                     
 |--------------------------------------------------
 |  推送信息 | Pod ERROR统计，请查看附件内容 
 ---------------------------------------------------
