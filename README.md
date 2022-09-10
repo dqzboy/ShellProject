@@ -1,2 +1,2 @@
 # ShellProject
-用来分享一些Shell脚本
+> Used to share some shell scripts
