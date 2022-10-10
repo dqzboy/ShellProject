@@ -1,4 +1,14 @@
 #!/bin/bash
+#===============================================================================
+#
+#          FILE: K8s-Pod_ERROR.sh
+# 
+#         USAGE: ./K8s-Pod_ERROR.sh
+#   DESCRIPTION: 通过kubectl客户端工具拉取指定名称空间下指定时间内Pod容器的ERROR数量
+# 
+#  ORGANIZATION: dqzboy.com
+#===============================================================================
+
 #注意这里要声明环境变量，不然不识别kubectl命令
 PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 nameSpace="default"
@@ -29,7 +39,7 @@ echo -e """
 |--------------------------------------------------
 |  推送信息 | Pod ERROR统计，请查看附件内容 
 ---------------------------------------------------
-""" | mail -s "TEST-K8s Pod Logs ERROR" -a /home/PodError.txt dingqinzheng@xxx.com
+""" | mail -s "TEST-K8s Pod Logs ERROR" -a /home/PodError.txt dqzboy@xxx.com
 #删除txt文件
 sleep 3
 rm -f /home/pod_error.txt

@@ -1,4 +1,13 @@
 #!/bin/bash
+#===============================================================================
+#
+#          FILE: install_elk762.sh
+# 
+#         USAGE: ./install_elk762.sh
+#   DESCRIPTION: 一键部署ELK服务
+# 
+#  ORGANIZATION: dqzboy.com
+#===============================================================================
 
 export PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
