@@ -8,7 +8,7 @@
 #   DESCRIPTION: 获取当前服务器的cpu/mem等信息
 # 
 #  ORGANIZATION: dqzboy.com
-#       CREATED: 23/05/2019
+#       CREATED: 2019
 #===============================================================================
 
 set -o nounset                              # Treat unset variables as an error
