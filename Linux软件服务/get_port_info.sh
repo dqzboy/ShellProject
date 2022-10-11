@@ -3,7 +3,7 @@
 #
 #          FILE: get_port_info.sh
 # 
-#         USAGE: ./get_svr_info.sh [-h] [-i ip] -p <port>
+#         USAGE: ./get_port_info.sh [-h] [-i ip] -p <port>
 # 
 #   DESCRIPTION: 获取指定服务端口的统计信息
 # 
