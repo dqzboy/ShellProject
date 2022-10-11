@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
-
-# MySQL 全备+增量备份脚本 使用 percona xtrabackup
+#===============================================================================
+#
+#          FILE: mysql_increment_hot_backup.sh
+# 
+#         USAGE: ./mysql_increment_hot_backup.sh
+# 
+#   DESCRIPTION: MySQL 全备+增量备份脚本 使用 percona xtrabackup
+# 
+#  ORGANIZATION: dqzboy.com
+#       CREATED: 2019
+#===============================================================================
 
 # 读取配置文件中的所有变量值, 设置为全局变量
 #xtrabackup_cron目录以及脚本、配置文件路径;绝对路径
