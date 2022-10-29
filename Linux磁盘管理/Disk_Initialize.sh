@@ -1,4 +1,15 @@
 #!/bin/bash
+#===============================================================================
+#
+#          FILE: Disk_Initialize.sh
+# 
+#         USAGE: ./Disk_Initialize.sh 
+# 
+#   DESCRIPTION: Linux CentOS Disk免交互格式化分区、挂载
+# 
+#  ORGANIZATION: dqzboy.com
+#       CREATED: 2021
+#===============================================================================
 
 # 安装软件
 EXPECT=`yum list installed | grep -w expect`
