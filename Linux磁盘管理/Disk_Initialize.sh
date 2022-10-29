@@ -49,7 +49,7 @@ Disk=`fdisk -l | grep "Disk /dev" | sed -n '2p' | awk '{print $2}' | awk -F ':' 
 DiskP=${Disk}1
 if [[ "${Disk}" != " " ]];then
 expect -c "
-  spawn fdisk $diskf
+  spawn fdisk ${Disk}
   expect {
     -re \"(.*)careful(.*)(\n*)(.*)help(.*)\" { send \"n\r\";exp_continue }
     \"default p\" { send \"\r\";exp_continue }
@@ -76,7 +76,6 @@ if ! grep "${DiskP}" /etc/fstab; then
 cat >> /etc/fstab <<EOF
 ${DiskP} /data                   xfs     defaults        1 0
 EOF
-echo "${DiskUUID}"
 fi
 
 # 创建挂载目录
