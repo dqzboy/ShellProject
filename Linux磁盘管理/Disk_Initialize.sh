@@ -1,4 +1,5 @@
 #!/bin/bash
+
 #===============================================================================
 #
 #          FILE: Disk_Initialize.sh
@@ -14,19 +15,33 @@
 # 安装软件
 EXPECT=`yum list installed | grep -w expect`
 if [ $? -eq 0 ];then
-   echo "Skip..."
+   echo
+   echo
+   echo "--------------------------------------------------------------------------"
+   echo "               Yum Install expect Skip..."
+   echo "--------------------------------------------------------------------------"
+   echo
+   echo
 else 
    yum -y install expect
-   echo "Done..."
+   echo
+   echo
+   echo "--------------------------------------------------------------------------"
+   echo "               Yum Install expect Done..."
+   echo "--------------------------------------------------------------------------"
+   echo
+   echo
 fi
 
 # 解锁文件
 chattr -i /etc/fstab
 
 OS_CN() {
-Disk=`fdisk -l | grep "磁盘 /dev" | sed -n '2p' | awk '{print $2}' | awk -F '：' '{print $1}' | grep -v "centos-root"`
-DiskP=${Disk}1
-if [[ "${Disk}" != " " ]];then
+# 注意修改磁盘名称前缀,例如这里的 /sd
+Dsk=`lsblk -r --output NAME,MOUNTPOINT | awk -F \/ '/sd/ { dsk=substr($1,1,3);dsks[dsk]+=1 } END { for ( i in dsks ) { if (dsks[i]==1) print i } }'`
+Disk="/dev/${Dsk}"
+DiskP="${Disk}1"
+if [ ! -z "${Dsk}" ];then
 expect -c "
   spawn fdisk ${Disk}
   expect {
@@ -39,15 +54,21 @@ expect -c "
   }
 "
 else
-  echo "The new disk was not found. Exit..."
-  exit 1
+   echo
+   echo
+   echo "--------------------------------------------------------------------------"
+   echo "               The new disk was not found. Exit..."
+   echo "--------------------------------------------------------------------------"
+   echo
+   exit 1
 fi
 }
 
 OS_EN() {
-Disk=`fdisk -l | grep "Disk /dev" | sed -n '2p' | awk '{print $2}' | awk -F ':' '{print $1}' | grep -v "centos-root"`
-DiskP=${Disk}1
-if [[ "${Disk}" != " " ]];then
+Dsk=`lsblk -r --output NAME,MOUNTPOINT | awk -F \/ '/sd/ { dsk=substr($1,1,3);dsks[dsk]+=1 } END { for ( i in dsks ) { if (dsks[i]==1) print i } }'`
+Disk="/dev/${Dsk}"
+DiskP="${Disk}1"
+if [ ! -z "${Dsk}" ];then
 expect -c "
   spawn fdisk ${Disk}
   expect {
@@ -60,22 +81,38 @@ expect -c "
   }
 "
 else
-  echo "The new disk was not found. Exit..."
-  exit 1
+   echo
+   echo
+   echo "--------------------------------------------------------------------------"
+   echo "              The new disk was not found. Exit..."
+   echo "--------------------------------------------------------------------------"
+   echo
+   exit 1
 fi
 }
 
 Mkfs_Disk() {
 sleep 3
-# 获取分区UUID
-#DiskUUID=`blkid | grep ${DiskP} | awk -F "\"" '{print $2}'`
 
-# 格式化分享
-mkfs.xfs -f -n ftype=1 ${DiskP}
+# 格式化分区
+Partitions=`blkid | awk -F ":" '{print $1}'| grep "${DiskP}"`
+if [ $? -eq 0 ];then
+   echo
+   echo
+   echo "--------------------------------------------------------------------------"
+   echo "               Formatted Done"
+   echo "--------------------------------------------------------------------------"
+   echo
+   echo
+else
+   mkfs.xfs -f -n ftype=1 ${DiskP}
+fi
+
 if ! grep "${DiskP}" /etc/fstab; then
 cat >> /etc/fstab <<EOF
 ${DiskP} /data                   xfs     defaults        1 0
 EOF
+echo "--------------------------------------------------------------------------"
 fi
 
 # 创建挂载目录
