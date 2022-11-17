@@ -4,7 +4,7 @@
 #          FILE: firewalld_Closure.sh
 # 
 #         USAGE: ./firewalld_Closure.sh prot
-#   DESCRIPTION: 通过iptables限制访问网段，只允许大陆、港澳台IP可以访问
+#   DESCRIPTION: 通过firewalld管理服务端口
 # 
 #  ORGANIZATION: dqzboy.com
 #===============================================================================
