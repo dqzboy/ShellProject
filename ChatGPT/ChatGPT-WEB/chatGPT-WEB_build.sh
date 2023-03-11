@@ -47,8 +47,8 @@ if ! command -v node &> /dev/null
 then
     echo "Node.js 未安装，正在进行安装..."
     # 安装 Node.js
-    #curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
-    #yum install -y nodejs
+    curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
+    yum install -y nodejs
 else
     echo "Node.js 已安装..."
 fi
@@ -58,7 +58,7 @@ if ! command -v pnpm &> /dev/null
 then
     echo "pnpm 未安装，正在进行安装..."
     # 安装 pnpm
-    #npm install -g pnpm
+    npm install -g pnpm
 else
     echo "pnpm 已安装..." 
 fi
@@ -76,7 +76,7 @@ ${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------
 echo
 ${SETCOLOR_NORMAL}
 
-# 交互输入Nginx根目录, 已有的.env文件存放路径(提前进行创建好)
+# 交互输入Nginx根目录
 read -p "请输入Nginx根目录(绝对路径)[不可缺失!]：" WEBDIR
 if [ -z "${WEBDIR}" ];then
     ${SETCOLOR_RED} && echo "参数为空,退出执行"
@@ -86,7 +86,7 @@ else
 fi
 
 read -p "修改用户默认名称/描述/头像信息,请用空格分隔[留空则保持默认!]：" USERINFO
-if [ -z "${WEBDIR}" ];then
+if [ -z "${USERINFO}" ];then
     ${SETCOLOR_SKYBLUE} && echo "没有输入,保持默认" && ${SETCOLOR_NORMAL}
 else
     USER=$(echo "${USERINFO}" | cut -d' ' -f1)
@@ -99,18 +99,16 @@ else
     sed -i "s#Star on <a href=\"https://github.com/Chanzhaoyu/chatgpt-bot\" class=\"text-blue-500\" target=\"_blank\" >Github</a>#${INFO}#g" ${ORIGINAL}/${CHATDIR}/src/store/modules/user/helper.ts
     sed -i "s#https://raw.githubusercontent.com/Chanzhaoyu/chatgpt-web/main/src/assets/avatar.jpg#${AVATAR}#g" ${ORIGINAL}/${CHATDIR}/src/store/modules/user/helper.ts
 fi
-
-
 }
 
-
+#前端
 function BUILDWEB() {
 # 安装依赖
 pnpm bootstrap
 # 打包
 pnpm build
 }
-
+#后端
 function BUILDSEV() {
 # 安装依赖
 pnpm install
