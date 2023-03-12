@@ -17,11 +17,36 @@ SETCOLOR_RED="echo  -en \\E[0;31m"
 
 # 定义项目仓库地址
 GITGPT="https://github.com/Chanzhaoyu/chatgpt-web"
+
 # 定义需要拷贝的文件目录
 CHATDIR="chatgpt-web"
 SERDIR="service"
 FONTDIR="dist"
 ORIGINAL=${PWD}
+
+function CHECKFIRE() {
+# Check if firewall is enabled
+firewall_status=$(systemctl is-active firewalld)
+if [[ $firewall_status == 'active' ]]; then
+    # If firewall is enabled, disable it
+    systemctl stop firewalld
+    systemctl disable firewalld
+    echo "Firewall has been disabled."
+else
+    echo "Firewall is already disabled."
+fi
+
+# Check if SELinux is enforcing
+selinux_status=$(getenforce)
+if [[ $selinux_status == 'Enforcing' ]]; then
+    # If SELinux is enforcing, set it to permissive mode
+    setenforce 0
+    sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
+    echo "SELinux has been set to permissive mode."
+else
+    echo "SELinux is already in permissive mode."
+fi
+}
 
 function GITCLONE() {
 ${SETCOLOR_SUCCESS} && echo "-------------------------------------<项目克隆>-------------------------------------" && ${SETCOLOR_NORMAL}
@@ -31,7 +56,7 @@ ${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------
 echo
 ${SETCOLOR_NORMAL}
 
-read -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
+read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
 if [ ${NETWORK} == 1 ];then
     cd ${ORIGINAL} && git clone ${GITGPT}
 elif [ ${NETWORK} == 2 ];then
@@ -47,7 +72,8 @@ if ! command -v node &> /dev/null
 then
     echo "Node.js 未安装，正在进行安装..."
     # 安装 Node.js
-    curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
+    yum -y install libstdc++.so.glibc glibc lsof
+    curl -fsSL https://rpm.nodesource.com/setup_16.x | bash -
     yum install -y nodejs
 else
     echo "Node.js 已安装..."
@@ -76,16 +102,16 @@ ${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------
 echo
 ${SETCOLOR_NORMAL}
 
-# 交互输入Nginx根目录
-read -p "请输入Nginx根目录(绝对路径)[不可缺失!]：" WEBDIR
+# 交互输入Nginx根目录, 已有的.env文件存放路径(提前进行创建好)
+read -e -p "请输入Nginx根目录(绝对路径)[不可缺失!]：" WEBDIR
 if [ -z "${WEBDIR}" ];then
-    ${SETCOLOR_RED} && echo "参数为空,退出执行"
+    ${SETCOLOR_RED} && echo "参数为空,退出执行" && ${SETCOLOR_NORMAL}
     exit 1
 else
     ${SETCOLOR_SUCCESS} && echo "Nginx根目录：${WEBDIR}" && ${SETCOLOR_NORMAL}
 fi
 
-read -p "修改用户默认名称/描述/头像信息,请用空格分隔[留空则保持默认!]：" USERINFO
+read -e -p "修改用户默认名称/描述/头像信息,请用空格分隔[留空则保持默认!]：" USERINFO
 if [ -z "${USERINFO}" ];then
     ${SETCOLOR_SKYBLUE} && echo "没有输入,保持默认" && ${SETCOLOR_NORMAL}
 else
@@ -99,16 +125,18 @@ else
     sed -i "s#Star on <a href=\"https://github.com/Chanzhaoyu/chatgpt-bot\" class=\"text-blue-500\" target=\"_blank\" >Github</a>#${INFO}#g" ${ORIGINAL}/${CHATDIR}/src/store/modules/user/helper.ts
     sed -i "s#https://raw.githubusercontent.com/Chanzhaoyu/chatgpt-web/main/src/assets/avatar.jpg#${AVATAR}#g" ${ORIGINAL}/${CHATDIR}/src/store/modules/user/helper.ts
 fi
+
+
 }
 
-#前端
+
 function BUILDWEB() {
 # 安装依赖
 pnpm bootstrap
 # 打包
 pnpm build
 }
-#后端
+
 function BUILDSEV() {
 # 安装依赖
 pnpm install
@@ -173,6 +201,7 @@ function DELSOURCE() {
 }
 
 function main() {
+   CHECKFIRE
    NODEJS
    GITCLONE
    INFO
