@@ -24,7 +24,19 @@ SERDIR="service"
 FONTDIR="dist"
 ORIGINAL=${PWD}
 
+
+function SUCCESS_ON() {
+${SETCOLOR_SUCCESS} && echo "-------------------------------------<提 示>-------------------------------------" && ${SETCOLOR_NORMAL}
+}
+
+function SUCCESS_END() {
+${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------"
+echo
+}
+
+
 function CHECKFIRE() {
+SUCCESS_ON
 # Check if firewall is enabled
 firewall_status=$(systemctl is-active firewalld)
 if [[ $firewall_status == 'active' ]]; then
@@ -45,14 +57,40 @@ if sestatus | grep "SELinux status" | grep -q "enabled"; then
 else
     echo "SELinux is already disabled."
 fi
+SUCCESS_END
+}
+
+
+function INSTALL_NGINX() {
+SUCCESS_ON
+# 检查是否已安装Nginx
+if which nginx >/dev/null; then
+  echo "Nginx is already installed."
+else
+  echo "Installing Nginx..."
+  # 下载并安装RPM包
+  rpm -ivh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
+  yum install -y nginx
+  echo "Nginx installed."
+fi
+
+
+# 检查Nginx是否正在运行
+if systemctl status nginx &> /dev/null; then
+  echo "Nginx is already running."
+else
+  echo "Starting Nginx..."
+  systemctl start nginx
+  systemctl enable nginx
+  echo "Nginx started."
+fi
+SUCCESS_END
 }
 
 function GITCLONE() {
 ${SETCOLOR_SUCCESS} && echo "-------------------------------------<项目克隆>-------------------------------------" && ${SETCOLOR_NORMAL}
-${SETCOLOR_SUCCESS}
 ${SETCOLOR_RED} && echo "                           注: 国内服务器请选择参数 2 "
-${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------"
-echo
+SUCCESS_END
 ${SETCOLOR_NORMAL}
 
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
@@ -61,12 +99,12 @@ if [ ${NETWORK} == 1 ];then
 elif [ ${NETWORK} == 2 ];then
     cd ${ORIGINAL} && git clone https://ghproxy.com/${GITGPT}
 fi
-${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------" && ${SETCOLOR_NORMAL}
+SUCCESS_END
 }
 
 function NODEJS() {
+SUCCESS_ON
 # 检查是否安装了Node.js
-${SETCOLOR_SUCCESS} && echo "-------------------------------------<提 示>-------------------------------------" && ${SETCOLOR_NORMAL}
 if ! command -v node &> /dev/null
 then
     echo "Node.js 未安装，正在进行安装..."
@@ -87,29 +125,25 @@ then
 else
     echo "pnpm 已安装..." 
 fi
-
-${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------" && ${SETCOLOR_NORMAL}
+SUCCESS_END
 }
 
 function INFO() {
-echo
-${SETCOLOR_SUCCESS} && echo "-------------------------------------<提 示>-------------------------------------"
+SUCCESS_ON
 echo "                           构建之前请先指定Nginx根路径与.env文件!"
-${SETCOLOR_SUCCESS}
 ${SETCOLOR_RED} && echo "                           注: 默认项目中的没有.env文件需要创建!"
-${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------"
-echo
+SUCCESS_END
 ${SETCOLOR_NORMAL}
 
 # 交互输入Nginx根目录, 已有的.env文件存放路径(提前进行创建好)
-read -e -p "请输入Nginx根目录(绝对路径)[不可缺失!]：" WEBDIR
+read -e -p "请输入chatGPT-WEB存储目录(绝对路径)[回车默认Nginx根目录]：" WEBDIR
 if [ -z "${WEBDIR}" ];then
-    ${SETCOLOR_RED} && echo "参数为空,退出执行" && ${SETCOLOR_NORMAL}
-    exit 1
+    WEBDIR="/usr/share/nginx/html"
+    ${SETCOLOR_SKYBLUE} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
 else
-    ${SETCOLOR_SUCCESS} && echo "Nginx根目录：${WEBDIR}" && ${SETCOLOR_NORMAL}
+    ${SETCOLOR_SUCCESS} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
 fi
-
+echo "------------------------------------------------------------------------------------------------"
 read -e -p "修改用户默认名称/描述/头像信息,请用空格分隔[留空则保持默认!]：" USERINFO
 if [ -z "${USERINFO}" ];then
     ${SETCOLOR_SKYBLUE} && echo "没有输入,保持默认" && ${SETCOLOR_NORMAL}
@@ -145,12 +179,9 @@ pnpm build
 
 
 function BUILD() {
-echo
-${SETCOLOR_SUCCESS} && echo "-------------------------------------<提 示>-------------------------------------"
+SUCCESS_ON
 echo "                           开始进行构建.构建快慢取决于你的环境"
-${SETCOLOR_SUCCESS}
-${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------"
-echo
+SUCCESS_END
 ${SETCOLOR_NORMAL}
 # 拷贝.env配置替换
 cp ${ORIGINAL}/env.example ${ORIGINAL}/${CHATDIR}/${SERDIR}/.env
@@ -170,13 +201,14 @@ ${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------
 # 拷贝构建成品到Nginx网站根目录
 function NGINX() {
 # 拷贝后端并启动
+echo
 ${SETCOLOR_SUCCESS} && echo "-----------------------------------<后端部署>-----------------------------------" && ${SETCOLOR_NORMAL}
 echo ${PWD}
 \cp -fr ${ORIGINAL}/${CHATDIR}/${SERDIR} ${WEBDIR}
 # 检查名为 node后端 的进程是否正在运行
 pid=$(lsof -t -i:3002)
 if [ -z "$pid" ]; then
-    echo "后端程序未运行"
+    echo "后端程序未运行,启动中..."
 else
     echo "后端程序正在运行,现在停止程序并更新..."
     kill -9 $pid
@@ -201,6 +233,7 @@ function DELSOURCE() {
 
 function main() {
    CHECKFIRE
+   INSTALL_NGINX
    NODEJS
    GITCLONE
    INFO
