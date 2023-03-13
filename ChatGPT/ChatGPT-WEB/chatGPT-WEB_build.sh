@@ -40,7 +40,7 @@ fi
 if sestatus | grep "SELinux status" | grep -q "enabled"; then
     echo "SELinux is enabled. Disabling SELinux..."
     setenforce 0
-    sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+    sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
     echo "SELinux is already disabled."
 else
     echo "SELinux is already disabled."
