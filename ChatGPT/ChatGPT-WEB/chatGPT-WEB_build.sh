@@ -17,7 +17,7 @@ SETCOLOR_RED="echo  -en \\E[0;31m"
 
 # 定义项目仓库地址
 GITGPT="https://github.com/Chanzhaoyu/chatgpt-web"
-
+#GITGPT="https://github.com/gouguoyin/chatgpt-web"
 # 定义需要拷贝的文件目录
 CHATDIR="chatgpt-web"
 SERDIR="service"
@@ -37,14 +37,13 @@ else
 fi
 
 # Check if SELinux is enforcing
-selinux_status=$(getenforce)
-if [[ $selinux_status == 'Enforcing' ]]; then
-    # If SELinux is enforcing, set it to permissive mode
+if sestatus | grep "SELinux status" | grep -q "enabled"; then
+    echo "SELinux is enabled. Disabling SELinux..."
     setenforce 0
-    sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
-    echo "SELinux has been set to permissive mode."
+    sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+    echo "SELinux is already disabled."
 else
-    echo "SELinux is already in permissive mode."
+    echo "SELinux is already disabled."
 fi
 }
 
