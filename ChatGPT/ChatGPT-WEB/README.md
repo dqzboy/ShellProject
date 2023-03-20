@@ -1,4 +1,27 @@
-## Nginx配置参考
+## 脚本执行操作流程演示
+- **说明**：目前该脚本只适用于CentOS 7系统
+- 下载仓库下面的`env.example`示例文件，并与脚本文件存放在同级目录下，执行脚本前记得修改文件里的相关参数，例如API KEY等信息
+- **注意**：如果服务器已经安装了Nginx，那么构建之前请指定ChatGPT-WEB前端项目存放的Nginx根路径
+```shell
+[root@localhost ~]# mkdir -p /data/chatgpt-web 
+[root@localhost ~]# cd /data/chatgpt-web
+[root@localhost chatgpt-web]# ls
+chatGPT-WEB_build.sh  env.example
+
+[root@localhost chatgpt-web]# chmod +x chatGPT-WEB_build.sh 
+[root@localhost chatgpt-web]# ./chatGPT-WEB_build.sh
+```
+<table>
+    <tr>
+        <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/226394338-a9ab319d-f732-4f77-8484-06ffbc56fe08.png"?raw=true"></td>
+        <td width="50%" align="center"><img src=""?raw=true"></td>
+    </tr>
+</table>
+
+
+
+
+## Nginx后端接口配置参考
 - 需要在server块中添加一个location规则用来代理后端API接口地址，配置修改参考如下：
 
 > /etc/nginx/conf.d/default.conf
