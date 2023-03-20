@@ -1,4 +1,4 @@
-## 脚本执行操作流程演示
+## 脚本执行流程演示
 - **说明**：目前该脚本只适用于CentOS 7系统
 - 下载仓库下面的`env.example`示例文件，并与脚本文件存放在同级目录下，执行脚本前记得修改文件里的相关参数，例如API KEY等信息
 - **注意**：如果服务器已经安装了Nginx，那么构建之前请指定ChatGPT-WEB前端项目存放的Nginx根路径
@@ -14,14 +14,24 @@ chatGPT-WEB_build.sh  env.example
 <table>
     <tr>
         <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/226394338-a9ab319d-f732-4f77-8484-06ffbc56fe08.png"?raw=true"></td>
-        <td width="50%" align="center"><img src=""?raw=true"></td>
+    </tr>
+</table>
+
+<table>
+    <tr>
+        <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/226397329-a05146a1-acb3-44d9-babc-49d56c97a1fb.png"?raw=true"></td>
+    </tr>
+</table>
+<table>
+    <tr>
+        <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/226398111-e0e15713-de43-439b-a365-f2137711e6a1.png"?raw=true"></td>
     </tr>
 </table>
 
 
 
 
-## Nginx后端接口配置参考
+## Nginx后端配置参考
 - 需要在server块中添加一个location规则用来代理后端API接口地址，配置修改参考如下：
 
 > /etc/nginx/conf.d/default.conf
@@ -55,3 +65,8 @@ server {
     }
 }
 ```
+            
+## 部署完成访问
+![image](https://user-images.githubusercontent.com/42825450/226398855-7e914763-5204-423b-be14-a8cc7a9c85a0.png)
+   
+            
