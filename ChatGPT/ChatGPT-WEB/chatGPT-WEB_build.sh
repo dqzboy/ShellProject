@@ -130,19 +130,32 @@ SUCCESS_END
 
 function INFO() {
 SUCCESS_ON
-echo "                           构建之前请先指定Nginx根路径与.env文件!"
-${SETCOLOR_RED} && echo "                           注: 默认项目中的没有.env文件需要创建!"
+echo "                           构建之前请先指定Nginx根路径!"
 SUCCESS_END
 ${SETCOLOR_NORMAL}
 
 # 交互输入Nginx根目录, 已有的.env文件存放路径(提前进行创建好)
-read -e -p "请输入chatGPT-WEB存储目录(绝对路径)[回车默认Nginx根目录]：" WEBDIR
-if [ -z "${WEBDIR}" ];then
-    WEBDIR="/usr/share/nginx/html"
-    ${SETCOLOR_SKYBLUE} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
+if [ -f .input ]; then
+  last_input=$(cat .input)
+  read -e -p "WEB存储绝对路径(回车默认Nginx路径)[上次执行：${last_input}]：" WEBDIR
+  if [ -z "${WEBDIR}" ];then
+      WEBDIR="/usr/share/nginx/html"
+      ${SETCOLOR_SKYBLUE} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
+  else
+      ${SETCOLOR_SUCCESS} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
+  fi
 else
-    ${SETCOLOR_SUCCESS} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
+  read -e -p "WEB存储绝对路径(回车默认Nginx路径)：" WEBDIR
+  if [ -z "${WEBDIR}" ];then
+      WEBDIR="/usr/local/openresty/nginx/chatgpt-web"
+      ${SETCOLOR_SKYBLUE} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
+  else
+      ${SETCOLOR_SUCCESS} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
+  fi
 fi
+
+echo "${WEBDIR}" > .input
+
 echo "------------------------------------------------------------------------------------------------"
 read -e -p "修改用户默认名称/描述/头像信息,请用空格分隔[留空则保持默认!]：" USERINFO
 if [ -z "${USERINFO}" ];then
