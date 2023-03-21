@@ -134,7 +134,7 @@ echo "                           构建之前请先指定Nginx根路径!"
 SUCCESS_END
 ${SETCOLOR_NORMAL}
 
-# 交互输入Nginx根目录, 已有的.env文件存放路径(提前进行创建好)
+# 交互输入Nginx根目录(提前进行创建好)
 if [ -f .input ]; then
   last_input=$(cat .input)
   read -e -p "WEB存储绝对路径(回车默认Nginx路径)[上次执行：${last_input}]：" WEBDIR
