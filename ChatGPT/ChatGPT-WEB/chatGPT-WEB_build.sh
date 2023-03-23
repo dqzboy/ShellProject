@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #===============================================================================
 #
-#          FILE: build.sh
+#          FILE: chatGPT-WEB_build.sh
 # 
-#         USAGE: bash build.sh
+#         USAGE: ./chatGPT-WEB_build.sh
 #
-#   DESCRIPTION: chatGPT-WEB项目构建脚本
+#   DESCRIPTION: chatGPT-WEB项目一键构建、部署脚本
 # 
 #  ORGANIZATION: DingQz dqzboy.com
 #===============================================================================
