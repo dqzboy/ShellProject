@@ -5,6 +5,8 @@
 ```shell
 [root@localhost ~]# mkdir -p /data/chatgpt-web 
 [root@localhost ~]# cd /data/chatgpt-web
+[root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_build.sh
+[root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/env.example
 [root@localhost chatgpt-web]# ls
 chatGPT-WEB_build.sh  env.example
 
