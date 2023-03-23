@@ -17,7 +17,6 @@ SETCOLOR_RED="echo  -en \\E[0;31m"
 
 # 定义项目仓库地址
 GITGPT="https://github.com/Chanzhaoyu/chatgpt-web"
-#GITGPT="https://github.com/gouguoyin/chatgpt-web"
 # 定义需要拷贝的文件目录
 CHATDIR="chatgpt-web"
 SERDIR="service"
