@@ -3,8 +3,7 @@
 - 下载仓库下面的`env.example`示例文件，并与脚本文件存放在同级目录下，执行脚本前记得修改文件里的相关参数，例如API KEY等信息
 - **注意**：如果服务器已经安装了Nginx，那么构建之前请指定ChatGPT-WEB前端项目存放的Nginx根路径
 ```shell
-[root@localhost ~]# mkdir -p /data/chatgpt-web 
-[root@localhost ~]# cd /data/chatgpt-web
+[root@localhost ~]# mkdir -p /data/chatgpt-web && cd /data/chatgpt-web
 [root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_build.sh
 [root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/env.example
 [root@localhost chatgpt-web]# ls
