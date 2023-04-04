@@ -13,7 +13,7 @@
 #（3）下载主执行脚本与env示例文件
 [root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_Build.sh
 [root@localhost chatgpt-web]# ls
-chatGPT-WEB_build.sh  env.example
+chatGPT-WEB_build.sh chatGPT-WEB_C.sh chatGPT-WEB_U.sh env.example
 
 #（4）赋予脚本执行权限
 [root@localhost chatgpt-web]# chmod +x chatGPT-WEB_Build.sh
