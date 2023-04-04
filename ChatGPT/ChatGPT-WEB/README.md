@@ -26,7 +26,7 @@ chatGPT-WEB_build.sh  env.example
 
 <table>
     <tr>
-        <td width="50%" align="center"><img src=""?raw=true"></td>
+        <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/229757181-80e050c5-1092-496f-acab-36aadc5e6195.png"?raw=true"></td>
     </tr>
 </table>
 
