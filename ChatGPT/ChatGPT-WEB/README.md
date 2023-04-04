@@ -14,6 +14,13 @@ chatGPT-WEB_build.sh  env.example
 ```
 <table>
     <tr>
+        <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/229754730-8a0f65e7-a903-4958-bb6c-bd1cbda3d867.png"?raw=true"></td>
+    </tr>
+</table>
+
+
+<table>
+    <tr>
         <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/226394338-a9ab319d-f732-4f77-8484-06ffbc56fe08.png"?raw=true"></td>
     </tr>
 </table>
