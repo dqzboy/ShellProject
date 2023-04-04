@@ -6,17 +6,18 @@
 #（1）创建脚本执行目录
 [root@localhost ~]# mkdir -p /data/chatgpt-web && cd /data/chatgpt-web
 
-#（2）下载CentOS和Ubuntu构建部署脚本
+#（2）下载CentOS和Ubuntu构建部署脚本；如果你的系统是Ubuntu下载chatGPT-WEB_U.sh；如果是CentOS则下载chatGPT-WEB_C.sh
 [root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
 [root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh
 
-#（3）下载主执行脚本与env示例文件
+#（3）下载主执行脚本与env示例文件；chatGPT-WEB_build.sh脚本会判断当前系统是Ubuntu还是CentOS，其他系统则不会执行构建
 [root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_Build.sh
 [root@localhost chatgpt-web]# ls
 chatGPT-WEB_build.sh chatGPT-WEB_C.sh chatGPT-WEB_U.sh env.example
 
 #（4）赋予脚本执行权限
 [root@localhost chatgpt-web]# chmod +x chatGPT-WEB_Build.sh
+
 #（5）执行脚本
 [root@localhost chatgpt-web]# ./chatGPT-WEB_build.sh
 ```
