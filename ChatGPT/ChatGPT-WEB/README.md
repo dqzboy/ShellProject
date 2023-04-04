@@ -6,7 +6,7 @@
 #（1）创建脚本执行目录
 [root@localhost ~]# mkdir -p /data/chatgpt-web && cd /data/chatgpt-web
 
-# （2）下载CentOS和Ubuntu构建部署脚本
+#（2）下载CentOS和Ubuntu构建部署脚本
 [root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
 [root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh
 
