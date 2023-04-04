@@ -20,18 +20,13 @@ chatGPT-WEB_build.sh  env.example
 
 <table>
     <tr>
-        <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/229755531-026deb77-a176-4271-a7d3-10b22ca2d215.png"?raw=true"></td>
+        <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/229756730-8c39a416-69e2-4f62-9404-e61f7e3b61e5.png"?raw=true"></td>
     </tr>
 </table>
 
 <table>
     <tr>
-        <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/226397329-a05146a1-acb3-44d9-babc-49d56c97a1fb.png"?raw=true"></td>
-    </tr>
-</table>
-<table>
-    <tr>
-        <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/226398111-e0e15713-de43-439b-a365-f2137711e6a1.png"?raw=true"></td>
+        <td width="50%" align="center"><img src=""?raw=true"></td>
     </tr>
 </table>
 
