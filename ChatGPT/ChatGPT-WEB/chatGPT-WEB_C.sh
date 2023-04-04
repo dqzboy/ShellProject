@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #===============================================================================
 #
-#          FILE: chatGPT-WEB_build.sh
+#          FILE: chatGPT-WEB_C.sh
 # 
-#         USAGE: ./chatGPT-WEB_build.sh
+#         USAGE: ./chatGPT-WEB_C.sh
 #
 #   DESCRIPTION: chatGPT-WEB项目一键构建、部署脚本
 # 
