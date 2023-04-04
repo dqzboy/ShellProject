@@ -159,7 +159,7 @@ if [ -f .input ]; then
 else
   read -e -p "WEB存储绝对路径(回车默认Nginx路径)：" WEBDIR
   if [ -z "${WEBDIR}" ];then
-      WEBDIR="/usr/local/openresty/nginx/chatgpt-web"
+      WEBDIR="/usr/share/nginx/html"
       ${SETCOLOR_SKYBLUE} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
   else
       ${SETCOLOR_SUCCESS} && echo "chatGPT-WEB存储路径：${WEBDIR}" && ${SETCOLOR_NORMAL}
