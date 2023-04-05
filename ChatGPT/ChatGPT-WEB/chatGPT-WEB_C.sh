@@ -186,8 +186,6 @@ else
     #sed -i '/<div class="p-2 space-y-2 rounded-md bg-neutral-100 dark:bg-neutral-700">/,/<\/div>/d' ${ORIGINAL}/${CHATDIR}/src/components/common/Setting/About.vue
     # 删除设置里面的配置内容
     #sed -i '/^  setting:/,/^\s*},/d' ${ORIGINAL}/${CHATDIR}/src/locales/zh-CN.ts
-    #sed -i '/^  setting:/,/^\s*},/d' ${ORIGINAL}/${CHATDIR}/src/locales/zh-TW.ts
-    #sed -i '/^  setting:/,/^\s*},/d' ${ORIGINAL}/${CHATDIR}/src/locales/en-US.ts
 fi
 
 
