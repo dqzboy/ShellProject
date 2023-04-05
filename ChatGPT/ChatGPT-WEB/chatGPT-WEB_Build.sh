@@ -52,12 +52,12 @@ if [ ${NETWORK} == 1 ];then
 elif [ ${NETWORK} == 2 ];then
         if [ -f /etc/redhat-release ]; then
         echo "This is CentOS."
-        curl -O https://github.com/dqzboy/ShellProject/blob/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
+        curl -sO https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
         source ${PWD}/chatGPT-WEB_C.sh
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
             echo "This is Ubuntu."
-            curl -O https://github.com/dqzboy/ShellProject/blob/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh
+            curl -sO https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh
             source ${PWD}/chatGPT-WEB_U.sh
         else
             echo "Unknown Linux distribution."
