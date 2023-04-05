@@ -173,6 +173,10 @@ else
     sed -i "s#https://raw.githubusercontent.com/Chanzhaoyu/chatgpt-web/main/src/assets/avatar.jpg#${AVATAR}#g" ${ORIGINAL}/${CHATDIR}/src/store/modules/user/helper.ts
     # 删除配置里面的GitHub相关信息内容(可选，建议保留，尊重项目作者成果)
     #sed -i '/<div class="p-2 space-y-2 rounded-md bg-neutral-100 dark:bg-neutral-700">/,/<\/div>/d' ${ORIGINAL}/${CHATDIR}/src/components/common/Setting/About.vue
+    # 删除设置里面的配置内容
+    #sed -i '/^  setting:/,/^\s*},/d' ${ORIGINAL}/${CHATDIR}/src/locales/zh-CN.ts
+    #sed -i '/^  setting:/,/^\s*},/d' ${ORIGINAL}/${CHATDIR}/src/locales/zh-TW.ts
+    #sed -i '/^  setting:/,/^\s*},/d' ${ORIGINAL}/${CHATDIR}/src/locales/en-US.ts
 fi
 }
 
