@@ -74,7 +74,12 @@ server {
     }
 }
 ```
-            
+- 添加配置后，重载配置
+```shell
+nginx -t
+nginx -s reload
+```
+
 ## 部署完成访问
 ![image](https://user-images.githubusercontent.com/42825450/226398855-7e914763-5204-423b-be14-a8cc7a9c85a0.png)
    
