@@ -11,7 +11,6 @@ yum -y install wget
 wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_Build.sh
 wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/env.example
 
-
 #（3）赋予脚本执行权限
 chmod +x chatGPT-WEB_Build.sh
 
