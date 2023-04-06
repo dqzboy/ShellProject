@@ -22,7 +22,9 @@ chmod +x chatGPT-WEB_Build.sh
         <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/229754730-8a0f65e7-a903-4958-bb6c-bd1cbda3d867.png"?raw=true"></td>
     </tr>
 </table>
-
+            
+- 提示：如果Nginx是通过本脚本部署的，那么nginx根路径保持默认即可；直接回车
+            
 <table>
     <tr>
         <td width="50%" align="center"><img src="https://user-images.githubusercontent.com/42825450/229756730-8c39a416-69e2-4f62-9404-e61f7e3b61e5.png"?raw=true"></td>
