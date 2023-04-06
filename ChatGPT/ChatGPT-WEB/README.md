@@ -12,10 +12,10 @@ wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-
 
 
 #（3）赋予脚本执行权限
-[root@localhost chatgpt-web]# chmod +x chatGPT-WEB_Build.sh
+chmod +x chatGPT-WEB_Build.sh
 
 #（4）执行脚本
-[root@localhost chatgpt-web]# ./chatGPT-WEB_build.sh
+./chatGPT-WEB_build.sh
 ```
 <table>
     <tr>
