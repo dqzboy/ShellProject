@@ -4,13 +4,12 @@
 - **注意**：如果服务器已经安装了Nginx，那么构建之前请指定ChatGPT-WEB前端项目存放的Nginx根路径
 ```shell
 #（1）创建脚本执行目录
-[root@localhost ~]# mkdir -p /data/chatgpt-web && cd /data/chatgpt-web
+mkdir -p /data/chatgpt-web && cd /data/chatgpt-web
 
 #（2）下载主执行脚本与env示例文件；chatGPT-WEB_build.sh脚本会判断当前系统是Ubuntu还是CentOS，其他系统则不会执行构建
-[root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_Build.sh
-[root@localhost chatgpt-web]# wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/env.example
-[root@localhost chatgpt-web]# ls
-chatGPT-WEB_build.sh env.example
+yum -y insatll wget && wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_Build.sh
+wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/env.example
+
 
 #（3）赋予脚本执行权限
 [root@localhost chatgpt-web]# chmod +x chatGPT-WEB_Build.sh
