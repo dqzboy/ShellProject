@@ -84,4 +84,4 @@ server {
 ![image](https://user-images.githubusercontent.com/42825450/229753612-6cce29ef-7165-4c89-85aa-b1759947f345.png)
 
 ## 推荐阅读文章
-国内服务器实现科学上网并接入chatGPT-WEB
+[国内服务器实现科学上网并接入chatGPT-WEB](https://www.dqzboy.com/13754.html) 
