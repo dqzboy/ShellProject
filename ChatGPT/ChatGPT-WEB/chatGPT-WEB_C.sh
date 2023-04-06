@@ -81,7 +81,7 @@ if which nginx >/dev/null; then
 else
   echo "Installing Nginx..."
   # 下载并安装RPM包
-  yum -y install wget
+  yum -y install wget git
   wget http://nginx.org/packages/centos/7/x86_64/RPMS/nginx-1.22.1-1.el7.ngx.x86_64.rpm
   yum -y install nginx-1.22.1-1.el7.ngx.x86_64.rpm
   echo "Nginx installed."
