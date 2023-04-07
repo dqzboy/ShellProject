@@ -75,7 +75,7 @@ SUCCESS_END
 function INSTALL_NGINX() {
 SUCCESS_ON
 # 检查是否已安装Nginx
-if which nginx >/dev/null; then
+if which nginx &>/dev/null; then
   echo "Nginx is already installed."
 else
   echo "Installing Nginx..."
