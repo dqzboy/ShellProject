@@ -124,7 +124,7 @@ then
     echo "Node.js 未安装，正在进行安装..."
     # 安装 Node.js
     yum -y install libstdc++.so.glibc glibc lsof &>/dev/null
-    curl -fsSL https://rpm.nodesource.com/setup_16.x | bash -
+    curl -fsSL https://rpm.nodesource.com/setup_16.x | bash - &>/dev/null
     yum install -y nodejs &>/dev/null
 else
     echo "Node.js 已安装..."
