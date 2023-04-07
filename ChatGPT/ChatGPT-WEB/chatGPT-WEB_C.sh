@@ -80,10 +80,10 @@ if which nginx >/dev/null; then
 else
   echo "Installing Nginx..."
   # 下载并安装RPM包
-  yum -y install wget git openssl-devel pcre-devel zlib-devel gd-devel
-  yum -y install pcre2
-  wget http://nginx.org/packages/centos/7/x86_64/RPMS/nginx-1.22.1-1.el7.ngx.x86_64.rpm
-  rpm -ivh nginx-1.22.1-1.el7.ngx.x86_64.rpm
+  yum -y install wget git openssl-devel pcre-devel zlib-devel gd-devel > /dev/null 2>&1
+  yum -y install pcre2 > /dev/null 2>&1
+  wget http://nginx.org/packages/centos/7/x86_64/RPMS/nginx-1.22.1-1.el7.ngx.x86_64.rpm > /dev/null 2>&1
+  rpm -i nginx-1.22.1-1.el7.ngx.x86_64.rpm 
   echo "Nginx installed."
   rm -f nginx-1.22.1-1.el7.ngx.x86_64.rpm
 fi
@@ -123,9 +123,9 @@ if ! command -v node &> /dev/null
 then
     echo "Node.js 未安装，正在进行安装..."
     # 安装 Node.js
-    yum -y install libstdc++.so.glibc glibc lsof
+    yum -y install libstdc++.so.glibc glibc lsof > /dev/null 2>&1
     curl -fsSL https://rpm.nodesource.com/setup_16.x | bash -
-    yum install -y nodejs
+    yum install -y nodejs > /dev/null 2>&1
 else
     echo "Node.js 已安装..."
 fi
@@ -135,7 +135,7 @@ if ! command -v pnpm &> /dev/null
 then
     echo "pnpm 未安装，正在进行安装..."
     # 安装 pnpm
-    npm install -g pnpm
+    npm install -g pnpm > /dev/null 2>&1
 else
     echo "pnpm 已安装..." 
 fi
