@@ -192,17 +192,17 @@ fi
 function BUILDWEB() {
 ${SETCOLOR_SKYBLUE} && echo "《前端构建中，请稍等...》" && ${SETCOLOR_NORMAL}
 # 安装依赖
-pnpm bootstrap 2>&1 >/dev/null | grep -E "error|fail|warning"
+pnpm bootstrap 2>&1
 # 打包
-pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning|built in"
+pnpm build | grep -E "ERROR|ELIFECYCLE|WARN|*built in*"
 }
 
 function BUILDSEV() {
 ${SETCOLOR_SKYBLUE} && echo "《后端构建中，请稍等...》" && ${SETCOLOR_NORMAL}
 # 安装依赖
-pnpm install 2>&1 >/dev/null | grep -E "error|fail|warning"
+pnpm install 2>&1 >/dev/null
 # 打包
-pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning|Build success"
+pnpm build | grep -E "ERROR|ELIFECYCLE|WARN|*Build success*"
 }
 
 
