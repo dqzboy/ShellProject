@@ -95,7 +95,7 @@ if systemctl status nginx &> /dev/null; then
 else
   echo "Starting Nginx..."
   systemctl start nginx
-  systemctl enable nginx
+  systemctl enable nginx &>/dev/null
   echo "Nginx started."
 fi
 SUCCESS_END
