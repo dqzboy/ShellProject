@@ -193,6 +193,7 @@ function BUILDWEB() {
 # 安装依赖
 pnpm bootstrap 2>&1 >/dev/null | grep -E "error|fail|warning"
 # 打包
+${SETCOLOR_SKYBLUE} && echo "《前端构建中，请稍等...》" && ${SETCOLOR_NORMAL}
 pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning|built in"
 }
 
@@ -200,6 +201,7 @@ function BUILDSEV() {
 # 安装依赖
 pnpm install 2>&1 >/dev/null | grep -E "error|fail|warning"
 # 打包
+${SETCOLOR_SKYBLUE} && echo "《后端构建中，请稍等...》" && ${SETCOLOR_NORMAL}
 pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning|Build success"
 }
 
