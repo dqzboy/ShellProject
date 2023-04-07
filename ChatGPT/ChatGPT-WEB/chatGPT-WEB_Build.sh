@@ -33,14 +33,16 @@ ${SETCOLOR_NORMAL}
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
 if [ ${NETWORK} == 1 ];then
     if [ -f /etc/redhat-release ]; then
-        echo "This is CentOS."
+        ${SETCOLOR_SKYBLUE} && echo "----------《This is CentOS.》----------" && ${SETCOLOR_NORMAL}
+        ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
         yum install nscd -y &>/dev/null
         systemctl restart nscd.service
         curl -sO -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh 
         source ${PWD}/chatGPT-WEB_C.sh
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
-            echo "This is Ubuntu."
+            ${SETCOLOR_SKYBLUE} && echo "----------《This is Ubuntu.》----------" && ${SETCOLOR_NORMAL}
+            ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
             systemctl restart systemd-resolved
             curl -sO -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh
             source ${PWD}/chatGPT-WEB_U.sh
@@ -54,14 +56,16 @@ if [ ${NETWORK} == 1 ];then
     fi
 elif [ ${NETWORK} == 2 ];then
         if [ -f /etc/redhat-release ]; then
-        echo "This is CentOS."
+        ${SETCOLOR_SKYBLUE} && echo "----------《This is CentOS.》----------" && ${SETCOLOR_NORMAL}
+        ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
         yum install nscd -y &>/dev/null
         systemctl restart nscd.service
         curl -sO -H 'Cache-Control: no-cache' https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
         source ${PWD}/chatGPT-WEB_C.sh
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
-            echo "This is Ubuntu."
+            ${SETCOLOR_SKYBLUE} && echo "----------《This is Ubuntu.》----------" && ${SETCOLOR_NORMAL}
+            ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
             systemctl restart systemd-resolved
             curl -sO -H 'Cache-Control: no-cache' https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh
             source ${PWD}/chatGPT-WEB_U.sh
