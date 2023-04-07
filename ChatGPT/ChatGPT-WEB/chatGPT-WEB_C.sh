@@ -83,7 +83,7 @@ else
   yum -y install wget git openssl-devel pcre-devel zlib-devel gd-devel &>/dev/null
   yum -y install pcre2 &>/dev/null
   wget http://nginx.org/packages/centos/7/x86_64/RPMS/nginx-1.22.1-1.el7.ngx.x86_64.rpm &>/dev/null
-  rpm -i nginx-1.22.1-1.el7.ngx.x86_64.rpm 
+  rpm -i nginx-1.22.1-1.el7.ngx.x86_64.rpm 2>&1 >/dev/null | grep -E "error|fail|warning"
   echo "Nginx installed."
   rm -f nginx-1.22.1-1.el7.ngx.x86_64.rpm
 fi
