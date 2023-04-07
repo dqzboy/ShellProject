@@ -34,9 +34,9 @@ read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
 if [ ${NETWORK} == 1 ];then
     if [ -f /etc/redhat-release ]; then
         echo "This is CentOS."
-        yum install nscd -y 2>/dev/null
+        yum install nscd -y > /dev/null 2>&1
         systemctl restart nscd.service
-        curl -sO -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
+        curl -sO -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh 
         source ${PWD}/chatGPT-WEB_C.sh
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
@@ -55,7 +55,7 @@ if [ ${NETWORK} == 1 ];then
 elif [ ${NETWORK} == 2 ];then
         if [ -f /etc/redhat-release ]; then
         echo "This is CentOS."
-        yum install nscd -y 2>/dev/null
+        yum install nscd -y > /dev/null 2>&1
         systemctl restart nscd.service
         curl -sO -H 'Cache-Control: no-cache' https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
         source ${PWD}/chatGPT-WEB_C.sh
