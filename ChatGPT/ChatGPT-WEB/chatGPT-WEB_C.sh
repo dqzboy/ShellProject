@@ -193,14 +193,14 @@ function BUILDWEB() {
 # 安装依赖
 pnpm bootstrap 2>&1 >/dev/null | grep -E "error|fail|warning"
 # 打包
-pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning"
+pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning|built in"
 }
 
 function BUILDSEV() {
 # 安装依赖
 pnpm install 2>&1 >/dev/null | grep -E "error|fail|warning"
 # 打包
-pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning"
+pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning|Build success"
 }
 
 
