@@ -71,7 +71,7 @@ if which nginx &>/dev/null; then
 else
   echo "Installing Nginx..."
   # 安装Nginx
-  apt -y install nginx
+  apt -y install nginx &>/dev/null
   echo "Nginx installed."
 fi
 
