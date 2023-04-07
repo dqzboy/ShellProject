@@ -15,7 +15,7 @@ wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-
 chmod +x chatGPT-WEB_Build.sh
 
 #（4）执行脚本
-./chatGPT-WEB_build.sh
+./chatGPT-WEB_Build.sh
 ```
 <table>
     <tr>
