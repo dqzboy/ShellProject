@@ -230,7 +230,31 @@ else
     kill -9 $pid
 fi
 \cp -fr ${ORIGINAL}/${CHATDIR}/${FONTDIR}/* ${WEBDIR}
-cd ${WEBDIR}/${SERDIR}  && nohup pnpm run start > app.log 2>&1 &
+
+# 添加开机自启
+cat > /etc/systemd/system/chatgpt-web.service <<EOF
+[Unit]
+Description=ChatGPT Web Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=${WEBDIR}/${SERDIR}
+ExecStart=$(which pnpm) run start
+Restart=always
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s QUIT $MAINPID
+Restart=always
+TimeoutStopSec=5s
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl restart chatgpt-web
+systemctl enable chatgpt-web &>/dev/null
 # 拷贝前端刷新Nginx服务
 ${SETCOLOR_SUCCESS} && echo "-----------------------------------<前端部署>-----------------------------------" && ${SETCOLOR_NORMAL}
 if ! nginx -t ; then
