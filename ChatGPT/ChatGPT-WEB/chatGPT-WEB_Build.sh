@@ -42,6 +42,7 @@ if [ ${NETWORK} == 1 ];then
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
             echo "This is Ubuntu."
+            systemctl restart systemd-resolved
             curl -sO -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh
             source ${PWD}/chatGPT-WEB_U.sh
         else
@@ -63,6 +64,7 @@ elif [ ${NETWORK} == 2 ];then
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
             echo "This is Ubuntu."
+            systemctl restart systemd-resolved
             curl -sO -H 'Cache-Control: no-cache' https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh
             source ${PWD}/chatGPT-WEB_U.sh
         else
