@@ -35,8 +35,6 @@ if [ ${NETWORK} == 1 ];then
     if [ -f /etc/redhat-release ]; then
         ${SETCOLOR_SKYBLUE} && echo "----------《This is CentOS.》----------" && ${SETCOLOR_NORMAL}
         ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
-        yum install nscd -y &>/dev/null
-        systemctl restart nscd.service
         curl -sO -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh 
         source ${PWD}/chatGPT-WEB_C.sh
     elif [ -f /etc/lsb-release ]; then
@@ -58,8 +56,6 @@ elif [ ${NETWORK} == 2 ];then
         if [ -f /etc/redhat-release ]; then
         ${SETCOLOR_SKYBLUE} && echo "----------《This is CentOS.》----------" && ${SETCOLOR_NORMAL}
         ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
-        yum install nscd -y &>/dev/null
-        systemctl restart nscd.service
         curl -sO -H 'Cache-Control: no-cache' https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
         source ${PWD}/chatGPT-WEB_C.sh
     elif [ -f /etc/lsb-release ]; then
