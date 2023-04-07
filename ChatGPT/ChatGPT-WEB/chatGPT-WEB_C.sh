@@ -72,6 +72,15 @@ fi
 SUCCESS_END
 }
 
+function CHECK_PORT() {
+# 检测端口是否被占用
+if ! ss -tlnp | grep -q ":80"; then
+    echo "port 80 is free"
+else
+    echo "port 80 is already in use"
+    ${SETCOLOR_RED} && echo "80端口被占用，请注意修改Nginx默认监听端口！" && ${SETCOLOR_NORMAL}
+fi
+}
 
 function INSTALL_NGINX() {
 SUCCESS_ON
@@ -229,17 +238,6 @@ ${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------
 }
 
 
-function CHECK_PORT() {
-# 检测端口是否被占用
-if ! ss -tlnp | grep -q ":80"; then
-    echo "port 80 is free"
-else
-    echo "port 80 is already in use"
-    ${SETCOLOR_RED} && echo "80端口被占用，请注意修改Nginx默认监听端口！" && ${SETCOLOR_NORMAL}
-fi
-}
-
-
 # 拷贝构建成品到Nginx网站根目录
 function NGINX() {
 # 拷贝后端并启动
@@ -276,12 +274,12 @@ function DELSOURCE() {
 
 function main() {
    CHECKFIRE
+   CHECK_PORT
    INSTALL_NGINX
    NODEJS
    GITCLONE
    INFO
    BUILD
-   CHECK_PORT
    NGINX
    DELSOURCE
 }
