@@ -81,7 +81,8 @@ if which nginx >/dev/null; then
 else
   echo "Installing Nginx..."
   # 下载并安装RPM包
-  yum -y install wget git pcre2 openssl-devel pcre-devel zlib-devel gd-devel
+  yum -y install wget git openssl-devel pcre-devel zlib-devel gd-devel
+  yum -y install pcre2
   wget http://nginx.org/packages/centos/7/x86_64/RPMS/nginx-1.22.1-1.el7.ngx.x86_64.rpm
   rpm -ivh nginx-1.22.1-1.el7.ngx.x86_64.rpm
   echo "Nginx installed."
@@ -227,6 +228,18 @@ cd ${SERDIR} && BUILDSEV
 ${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------" && ${SETCOLOR_NORMAL}
 }
 
+
+function CHECK_PORT() {
+# 检测端口是否被占用
+if ! ss -tlnp | grep -q ":80"; then
+    echo "port 80 is free"
+else
+    echo "port 80 is already in use"
+    ${SETCOLOR_RED} && echo "80端口被占用，请注意修改Nginx默认监听端口！" && ${SETCOLOR_NORMAL}
+fi
+}
+
+
 # 拷贝构建成品到Nginx网站根目录
 function NGINX() {
 # 拷贝后端并启动
@@ -268,6 +281,7 @@ function main() {
    GITCLONE
    INFO
    BUILD
+   CHECK_PORT
    NGINX
    DELSOURCE
 }
