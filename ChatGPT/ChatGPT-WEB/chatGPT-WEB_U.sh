@@ -66,7 +66,7 @@ SUCCESS_END
 function INSTALL_NGINX() {
 SUCCESS_ON
 # 检查是否已安装Nginx
-if which nginx >/dev/null; then
+if which nginx &>/dev/null; then
   echo "Nginx is already installed."
 else
   echo "Installing Nginx..."
@@ -82,7 +82,7 @@ if systemctl status nginx &> /dev/null; then
 else
   echo "Starting Nginx..."
   systemctl start nginx
-  systemctl enable nginx
+  systemctl enable nginx &>/dev/null
   echo "Nginx started."
 fi
 SUCCESS_END
@@ -110,9 +110,9 @@ if ! command -v node &> /dev/null
 then
     echo "Node.js 未安装，正在进行安装..."
     # 安装 Node.js
-    curl -sL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-    apt remove libnode72:amd64 libnode-dev -y
-    apt install -y nodejs 
+    curl -sL https://deb.nodesource.com/setup_lts.x | sudo -E bash - &>/dev/null
+    apt remove libnode72:amd64 libnode-dev -y &>/dev/null
+    apt install -y nodejs &>/dev/null
 else
     echo "Node.js 已安装..."
 fi
@@ -122,7 +122,7 @@ if ! command -v pnpm &> /dev/null
 then
     echo "pnpm 未安装，正在进行安装..."
     # 安装 pnpm
-    npm install -g pnpm
+    npm install -g pnpm &>/dev/null
 else
     echo "pnpm 已安装..." 
 fi
