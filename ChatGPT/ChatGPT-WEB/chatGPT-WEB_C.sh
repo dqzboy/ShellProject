@@ -7,7 +7,7 @@
 #
 #   DESCRIPTION: chatGPT-WEB项目一键构建、部署脚本
 # 
-#  ORGANIZATION: DingQz dqzboy.com
+#  ORGANIZATION: DingQz dqzboy.com 浅时光博客
 #===============================================================================
 
 SETCOLOR_SKYBLUE="echo -en \\E[1;36m"
