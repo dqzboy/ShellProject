@@ -187,23 +187,20 @@ else
     # 删除配置里面的GitHub相关信息内容(可选，建议保留，尊重项目作者成果)
     #sed -i '/<div class="p-2 space-y-2 rounded-md bg-neutral-100 dark:bg-neutral-700">/,/<\/div>/d' ${ORIGINAL}/${CHATDIR}/src/components/common/Setting/About.vue
 fi
-
-
 }
-
 
 function BUILDWEB() {
 # 安装依赖
-pnpm bootstrap
+pnpm bootstrap 2>&1 >/dev/null | grep -E "error|fail|warning"
 # 打包
-pnpm build
+pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning"
 }
 
 function BUILDSEV() {
 # 安装依赖
-pnpm install
+pnpm install 2>&1 >/dev/null | grep -E "error|fail|warning"
 # 打包
-pnpm build
+pnpm build 2>&1 >/dev/null | grep -E "error|fail|warning"
 }
 
 
