@@ -268,6 +268,7 @@ systemctl daemon-reload
 systemctl restart chatgpt-web
 systemctl enable chatgpt-web &>/dev/null
 
+sleep 5
 if systemctl status chatgpt-web | grep -q "active (running)"; then
   echo "chatgpt-web后端服务已成功启动"
 else
