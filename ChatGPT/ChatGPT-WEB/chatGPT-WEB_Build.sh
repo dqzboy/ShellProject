@@ -28,7 +28,7 @@ echo
 function DL() {
 ${SETCOLOR_SUCCESS} && echo "------------------------------------<脚本下载>-------------------------------------" && ${SETCOLOR_NORMAL}
 ${SETCOLOR_RED} && echo "                           注: 国内服务器请选择参数 2 "
-SUCCESS_END
+${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------" && ${SETCOLOR_NORMAL}
 ${SETCOLOR_NORMAL}
 
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
