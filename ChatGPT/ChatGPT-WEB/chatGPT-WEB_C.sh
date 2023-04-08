@@ -272,8 +272,11 @@ sleep 10
 if systemctl status chatgpt-web | grep -q "active (running)"; then
   echo "chatgpt-web后端服务已成功启动"
 else
-  echo "chatgpt-web后端服务启动失败，请查看下面的错误日志："
+  echo
+  ${SETCOLOR_RED} && echo "----------------chatgpt-web后端服务启动失败，请查看错误日志 ↓↓↓----------------" && ${SETCOLOR_NORMAL}
   journalctl -u chatgpt-web --no-pager
+  ${SETCOLOR_RED} && echo "----------------chatgpt-web后端服务启动失败，请查看错误日志 ↑↑↑----------------" && ${SETCOLOR_NORMAL}
+  echo
 fi
 
 
