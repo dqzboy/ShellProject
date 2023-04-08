@@ -268,12 +268,12 @@ systemctl daemon-reload
 systemctl restart chatgpt-web
 systemctl enable chatgpt-web &>/dev/null
 
-sleep 5
+sleep 10
 if systemctl status chatgpt-web | grep -q "active (running)"; then
   echo "chatgpt-web后端服务已成功启动"
 else
   echo "chatgpt-web后端服务启动失败，请查看下面的错误日志："
-  journalctl -xeu chatgpt-web
+  journalctl -u chatgpt-web --no-pager
 fi
 
 
