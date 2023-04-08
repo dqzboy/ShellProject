@@ -255,6 +255,14 @@ EOF
 systemctl daemon-reload
 systemctl restart chatgpt-web
 systemctl enable chatgpt-web &>/dev/null
+
+if systemctl status chatgpt-web | grep -q "active (running)"; then
+  echo "chatgpt-web后端服务已成功启动"
+else
+  echo "chatgpt-web后端服务启动失败，请查看下面的错误日志："
+  journalctl -xeu chatgpt-web
+fi
+
 # 拷贝前端刷新Nginx服务
 ${SETCOLOR_SUCCESS} && echo "-----------------------------------<前端部署>-----------------------------------" && ${SETCOLOR_NORMAL}
 if ! nginx -t ; then
