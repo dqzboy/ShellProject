@@ -15,21 +15,10 @@ SETCOLOR_SUCCESS="echo -en \\E[0;32m"
 SETCOLOR_NORMAL="echo  -en \\E[0;39m"
 SETCOLOR_RED="echo  -en \\E[0;31m"
 
-function SUCCESS_ON() {
-${SETCOLOR_SUCCESS} && echo "-------------------------------------<提 示>-------------------------------------" && ${SETCOLOR_NORMAL}
-}
-
-function SUCCESS_END() {
-echo
-${SETCOLOR_SUCCESS} && echo "-------------------------------------<项目部署完成，请愉快的使用吧！>-------------------------------------" && ${SETCOLOR_NORMAL}
-echo
-}
-
 function DL() {
 ${SETCOLOR_SUCCESS} && echo "------------------------------------<脚本下载>-------------------------------------" && ${SETCOLOR_NORMAL}
 ${SETCOLOR_RED} && echo "                           注: 国内服务器请选择参数 2 "
 ${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------" && ${SETCOLOR_NORMAL}
-${SETCOLOR_NORMAL}
 
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
 if [ ${NETWORK} == 1 ];then
@@ -77,7 +66,6 @@ elif [ ${NETWORK} == 2 ];then
 else
    echo "Parameter Error"
 fi
-SUCCESS_END
 }
 
 DL
