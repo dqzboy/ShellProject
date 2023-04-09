@@ -8,14 +8,8 @@ mkdir -p /data/chatgpt-web && cd /data/chatgpt-web
 
 #（2）下载主执行脚本与env示例文件；chatGPT-WEB_build.sh脚本会判断当前系统是Ubuntu还是CentOS，其他系统则不会执行构建
 yum -y install wget
-wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_Build.sh
 wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/env.example
-
-#（3）赋予脚本执行权限
-chmod +x chatGPT-WEB_Build.sh
-
-#（4）执行脚本
-./chatGPT-WEB_Build.sh
+sh -c "$(wget -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_Build.sh)"
 ```
 <table>
     <tr>
