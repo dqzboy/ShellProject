@@ -25,13 +25,13 @@ if [ ${NETWORK} == 1 ];then
     if [ -f /etc/redhat-release ]; then
         ${SETCOLOR_SKYBLUE} && echo "----------《This is CentOS.》----------" && ${SETCOLOR_NORMAL}
         ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
-        sh -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh)"
+        bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh)"
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
             ${SETCOLOR_SKYBLUE} && echo "----------《This is Ubuntu.》----------" && ${SETCOLOR_NORMAL}
             ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
             systemctl restart systemd-resolved
-            sh -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh)"
+            bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh)"
         else
             echo "Unknown Linux distribution."
             exit 1
@@ -44,13 +44,13 @@ elif [ ${NETWORK} == 2 ];then
         if [ -f /etc/redhat-release ]; then
         ${SETCOLOR_SKYBLUE} && echo "----------《This is CentOS.》----------" && ${SETCOLOR_NORMAL}
         ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
-        sh -c "$(wget -q -O- https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh)"
+        bash -c "$(wget -q -O- https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh)"
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
             ${SETCOLOR_SKYBLUE} && echo "----------《This is Ubuntu.》----------" && ${SETCOLOR_NORMAL}
             ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
             systemctl restart systemd-resolved
-            sh -c "$(wget -q -O- https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh)"
+            bash -c "$(wget -q -O- https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh)"
         else
             echo "Unknown Linux distribution."
             exit 1
