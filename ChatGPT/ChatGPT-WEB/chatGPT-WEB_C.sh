@@ -293,7 +293,7 @@ fi
 # 删除源码包文件
 function DELSOURCE() {
   rm -rf ${ORIGINAL}/${CHATDIR}
-  rm -f ${ORIGINAL}/chatGPT-WEB_C.sh
+  #rm -f ${ORIGINAL}/chatGPT-WEB_C.sh
   ${SETCOLOR_SUCCESS} && echo "-----------------------------------<部署完成>-----------------------------------" && ${SETCOLOR_NORMAL}
 }
 
