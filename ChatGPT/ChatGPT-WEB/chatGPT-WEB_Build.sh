@@ -25,9 +25,8 @@ if [ ${NETWORK} == 1 ];then
     if [ -f /etc/redhat-release ]; then
         ${SETCOLOR_SKYBLUE} && echo "----------《This is CentOS.》----------" && ${SETCOLOR_NORMAL}
         ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
-        #curl -sO -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
-        #source ${PWD}/chatGPT-WEB_C.sh
-        sh -c "$(wget -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh)"
+        curl -sO -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh
+        source ${PWD}/chatGPT-WEB_C.sh
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
             ${SETCOLOR_SKYBLUE} && echo "----------《This is Ubuntu.》----------" && ${SETCOLOR_NORMAL}
