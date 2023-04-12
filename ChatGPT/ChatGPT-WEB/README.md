@@ -113,5 +113,14 @@ nginx -s reload
 
 ![image](https://user-images.githubusercontent.com/42825450/229753612-6cce29ef-7165-4c89-85aa-b1759947f345.png)
 
+
+## 一键卸载
+- 运行一键卸载脚本，会将安装脚本中所安装的Nginx、Nodejs组件一键卸载
+- 注意：如果你手动安装了其他版本，则需要使用适当的命令来卸载它们
+```shell
+bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/uninstall/uninstall.sh)"
+```
+
 ## 推荐阅读文章
 [国内服务器实现科学上网并接入chatGPT-WEB](https://www.dqzboy.com/13754.html) 
+
