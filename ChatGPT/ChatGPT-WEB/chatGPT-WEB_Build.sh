@@ -15,21 +15,34 @@ SETCOLOR_SUCCESS="echo -en \\E[0;32m"
 SETCOLOR_NORMAL="echo  -en \\E[0;39m"
 SETCOLOR_RED="echo  -en \\E[0;31m"
 
+
+SUCCESS() {
+  ${SETCOLOR_SUCCESS} && echo "------------------------------------< $! >-------------------------------------"  && ${SETCOLOR_NORMAL}
+}
+
+ERROR() {
+  ${SETCOLOR_RED} && echo ">>>>>>>> $1 <<<<<<<<"  && ${SETCOLOR_NORMAL}
+}
+
+INFO() {
+  ${SETCOLOR_SKYBLUE} && echo "------------------------------------ $1 ------------------------------------"  && ${SETCOLOR_NORMAL}
+}
+
 function DL() {
-${SETCOLOR_SUCCESS} && echo "------------------------------------<脚本下载>-------------------------------------" && ${SETCOLOR_NORMAL}
-${SETCOLOR_RED} && echo "                           注: 国内服务器请选择参数 2 "
-${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------" && ${SETCOLOR_NORMAL}
+SUCCESS "脚本下载"
+ERROR"注: 国内服务器请选择参数 2 "
+SUCCESS "END"
 
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
 if [ ${NETWORK} == 1 ];then
     if [ -f /etc/redhat-release ]; then
-        ${SETCOLOR_SKYBLUE} && echo "----------《This is CentOS.》----------" && ${SETCOLOR_NORMAL}
-        ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
+        INFO "《This is CentOS.》"
+        SUCCESS "系统环境检测中，请稍等..."
         bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh)"
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
-            ${SETCOLOR_SKYBLUE} && echo "----------《This is Ubuntu.》----------" && ${SETCOLOR_NORMAL}
-            ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
+            INFO "《This is Ubuntu.》"
+            SUCCESS "系统环境检测中，请稍等..."
             systemctl restart systemd-resolved
             bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh)"
         else
@@ -42,13 +55,13 @@ if [ ${NETWORK} == 1 ];then
     fi
 elif [ ${NETWORK} == 2 ];then
         if [ -f /etc/redhat-release ]; then
-        ${SETCOLOR_SKYBLUE} && echo "----------《This is CentOS.》----------" && ${SETCOLOR_NORMAL}
-        ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
+        INFO "《This is CentOS.》"
+        SUCCESS} "系统环境检测中，请稍等..."
         bash -c "$(wget -q -O- https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh)"
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
-            ${SETCOLOR_SKYBLUE} && echo "----------《This is Ubuntu.》----------" && ${SETCOLOR_NORMAL}
-            ${SETCOLOR_SUCCESS} && echo "系统环境检测中，请稍等..." && ${SETCOLOR_NORMAL}
+            INFO "《This is Ubuntu.》"
+            SUCCESS "系统环境检测中，请稍等..."
             systemctl restart systemd-resolved
             bash -c "$(wget -q -O- https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_U.sh)"
         else
@@ -60,7 +73,7 @@ elif [ ${NETWORK} == 2 ];then
         exit 2
     fi
 else
-   echo "Parameter Error"
+   ERROR "Parameter Error"
 fi
 }
 
