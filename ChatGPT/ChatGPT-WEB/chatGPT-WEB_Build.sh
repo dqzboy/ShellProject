@@ -25,12 +25,17 @@ ERROR() {
 }
 
 INFO() {
-  ${SETCOLOR_SKYBLUE} && echo "------------------------------------ $1 ------------------------------------"  && ${SETCOLOR_NORMAL}
+  ${SETCOLOR_SKYBLUE} && echo "------------------------------------<    $1   >-------------------------------------"  && ${SETCOLOR_NORMAL}
 }
+
+text1="注: 国内服务器请选择参数 2"
+width=75
+padding1=$((($width - ${#text1}) / 2))
+
 
 function DL() {
 SUCCESS "脚本下载"
-ERROR " 注: 国内服务器请选择参数 2 "
+printf "%*s%s%*s\n" $padding1 "" "$text1" $padding1 ""
 SUCCESS "END"
 
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
@@ -56,7 +61,7 @@ if [ ${NETWORK} == 1 ];then
 elif [ ${NETWORK} == 2 ];then
         if [ -f /etc/redhat-release ]; then
         INFO "《This is CentOS.》"
-        SUCCESS} "系统环境检测中，请稍等..."
+        SUCCESS "系统环境检测中，请稍等..."
         bash -c "$(wget -q -O- https://ghproxy.com/https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_C.sh)"
     elif [ -f /etc/lsb-release ]; then
         if grep -q "DISTRIB_ID=Ubuntu" /etc/lsb-release; then
@@ -76,5 +81,4 @@ else
    ERROR "Parameter Error"
 fi
 }
-
 DL
