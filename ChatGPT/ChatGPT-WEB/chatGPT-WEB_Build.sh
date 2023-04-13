@@ -25,7 +25,7 @@ ERROR() {
 }
 
 INFO() {
-  ${SETCOLOR_SKYBLUE} && echo "------------------------------------<    $1   >-------------------------------------"  && ${SETCOLOR_NORMAL}
+  ${SETCOLOR_SKYBLUE} && echo "------------------------------------< $1 >-------------------------------------"  && ${SETCOLOR_NORMAL}
 }
 
 text1="注: 国内服务器请选择参数 2"
@@ -36,7 +36,7 @@ padding1=$((($width - ${#text1}) / 2))
 function DL() {
 SUCCESS "脚本下载"
 printf "%*s%s%*s\n" $padding1 "" "$text1" $padding1 ""
-SUCCESS "END"
+SUCCESS "执行完成"
 
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
 if [ ${NETWORK} == 1 ];then
