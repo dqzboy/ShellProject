@@ -17,7 +17,7 @@ SETCOLOR_RED="echo  -en \\E[0;31m"
 
 
 SUCCESS() {
-  ${SETCOLOR_SUCCESS} && echo "------------------------------------< $! >-------------------------------------"  && ${SETCOLOR_NORMAL}
+  ${SETCOLOR_SUCCESS} && echo "------------------------------------< $1 >-------------------------------------"  && ${SETCOLOR_NORMAL}
 }
 
 ERROR() {
@@ -30,7 +30,7 @@ INFO() {
 
 function DL() {
 SUCCESS "脚本下载"
-ERROR"注: 国内服务器请选择参数 2 "
+ERROR " 注: 国内服务器请选择参数 2 "
 SUCCESS "END"
 
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
