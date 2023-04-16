@@ -266,6 +266,15 @@ echo
 ${SETCOLOR_SUCCESS} && echo "-----------------------------------<后端部署>-----------------------------------" && ${SETCOLOR_NORMAL}
 echo ${PWD}
 \cp -fr ${ORIGINAL}/${CHATDIR}/${SERDIR} ${WEBDIR}
+# 检测返回值
+if [ $? -eq 0 ]; then
+    # 如果指令执行成功，则继续运行下面的操作
+    echo "Service Copy Success"
+else
+    # 如果指令执行不成功，则输出错误日志，并退出脚本
+    echo "Copy Error"
+    exit 1
+fi
 # 检查名为 node后端 的进程是否正在运行
 pid=$(lsof -t -i:3002)
 if [ -z "$pid" ]; then
@@ -275,6 +284,15 @@ else
     kill -9 $pid
 fi
 \cp -fr ${ORIGINAL}/${CHATDIR}/${FONTDIR}/* ${WEBDIR}
+# 检测返回值
+if [ $? -eq 0 ]; then
+    # 如果指令执行成功，则继续运行下面的操作
+    echo "WEB Copy Success"
+else
+    # 如果指令执行不成功，则输出错误日志，并退出脚本
+    echo "Copy Error"
+    exit 2
+fi
 # 添加开机自启
 cat > /etc/systemd/system/chatgpt-web.service <<EOF
 [Unit]
@@ -301,14 +319,31 @@ systemctl restart chatgpt-web
 systemctl enable chatgpt-web &>/dev/null
 
 sleep 10
-if systemctl status chatgpt-web | grep -q "active (running)"; then
-  echo "chatgpt-web后端服务已成功启动"
+if pgrep -x "node" > /dev/null
+then
+    # 检测端口是否正在监听
+    if netstat -tuln | grep ":3002" > /dev/null
+    then
+        echo "chatgpt-web后端服务已成功启动"
+    else
+        echo
+        echo "ERROR：后端服务端口 3002 未在监听"
+        echo
+        ${SETCOLOR_RED} && echo "----------------chatgpt-web后端服务启动失败，请查看错误日志 ↓↓↓----------------" && ${SETCOLOR_NORMAL}
+        journalctl -u chatgpt-web --no-pager
+        ${SETCOLOR_RED} && echo "----------------chatgpt-web后端服务启动失败，请查看错误日志 ↑↑↑----------------" && ${SETCOLOR_NORMAL}
+        echo
+        exit 3
+    fi
 else
-  echo
-  ${SETCOLOR_RED} && echo "----------------chatgpt-web后端服务启动失败，请查看错误日志 ↓↓↓----------------" && ${SETCOLOR_NORMAL}
-  journalctl -u chatgpt-web --no-pager
-  ${SETCOLOR_RED} && echo "----------------chatgpt-web后端服务启动失败，请查看错误日志 ↑↑↑----------------" && ${SETCOLOR_NORMAL}
-  echo
+    echo
+    echo "ERROR：后端服务进程未找到"
+    echo
+    ${SETCOLOR_RED} && echo "----------------chatgpt-web后端服务启动失败，请查看错误日志 ↓↓↓----------------" && ${SETCOLOR_NORMAL}
+    journalctl -u chatgpt-web --no-pager
+    ${SETCOLOR_RED} && echo "----------------chatgpt-web后端服务启动失败，请查看错误日志 ↑↑↑----------------" && ${SETCOLOR_NORMAL}
+    echo
+    exit 4
 fi
 
 
@@ -316,7 +351,7 @@ fi
 ${SETCOLOR_SUCCESS} && echo "-----------------------------------<前端部署>-----------------------------------" && ${SETCOLOR_NORMAL}
 if ! nginx -t ; then
     echo "Nginx 配置文件存在错误，请检查配置"
-    exit 4
+    exit 5
 else
     nginx -s reload
 fi
