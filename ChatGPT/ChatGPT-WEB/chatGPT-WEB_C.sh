@@ -322,7 +322,7 @@ sleep 10
 if pgrep -x "node" > /dev/null
 then
     # 检测端口是否正在监听
-    if netstat -tuln | grep ":3002" > /dev/null
+    if ss -tuln | grep ":3002" > /dev/null
     then
         echo "chatgpt-web后端服务已成功启动"
     else
