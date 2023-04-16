@@ -12,7 +12,7 @@ yum -y install wget
 # Ubuntu
 apt -y install wget
 
-bash -c "$(wget -q -O- )"
+bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-Next-Web/ChatGPT-Next-Web_build.sh)"
 ```
 <table>
     <tr>
