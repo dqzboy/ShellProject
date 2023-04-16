@@ -290,8 +290,10 @@ User=root
 WorkingDirectory=${WEBDIR}/${SERDIR}
 ExecStart=$(which pnpm) run start
 Restart=always
-ExecReload=/bin/kill -s HUP \$MAINPID
-ExecStop=/bin/kill -s QUIT \$MAINPID
+ExecReload=/bin/kill -s HUP \$MAINPID > /dev/null 2>&1
+ExecStop=/bin/kill -s QUIT \$MAINPID > /dev/null 2>&1
+StandardOutput=null
+StandardError=null
 Restart=always
 TimeoutStopSec=5s
 [Install]
