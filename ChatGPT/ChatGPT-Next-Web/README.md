@@ -50,7 +50,7 @@ bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/mai
 - 运行一键卸载脚本，会将安装脚本中所安装的Nodejs组件一键卸载
 - 注意：如果你手动安装了其他版本，则需要使用适当的命令来卸载它们
 ```shell
-bash -c "$(wget -q -O- )"
+bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-Next-Web/uninstall/uninstall.sh)"
 ```
 
 ## 推荐阅读文章
