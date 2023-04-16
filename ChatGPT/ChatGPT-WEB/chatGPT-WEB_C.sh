@@ -305,8 +305,8 @@ User=root
 WorkingDirectory=${WEBDIR}/${SERDIR}
 ExecStart=$(which pnpm) run start
 Restart=always
-ExecReload=/bin/kill -s HUP $MAINPID
-ExecStop=/bin/kill -s QUIT $MAINPID
+ExecReload=/bin/kill -s HUP \$MAINPID
+ExecStop=/bin/kill -s QUIT \$MAINPID
 Restart=always
 TimeoutStopSec=5s
 
