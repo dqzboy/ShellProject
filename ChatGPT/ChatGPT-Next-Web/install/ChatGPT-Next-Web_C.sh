@@ -77,7 +77,7 @@ if [ -z "$pid" ]; then
 else
     echo "后端程序正在运行,现在停止程序并更新..."
     kill -9 $pid
-    if [ -d "/data/ChatGPT-Next-Web/" ]; then
+    if [ -d "${ORIGINAL}/${CHATDIR}" ]; then
        rm -rf ${ORIGINAL}/${CHATDIR}
     fi
 fi
