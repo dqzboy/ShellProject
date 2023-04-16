@@ -8,7 +8,7 @@ pid=$(lsof -t -i:3000)
 if [ -z "$pid" ]; then
     echo "后端程序未运行"
 else
-    echo "后端程序正在运行,现在停止程序并更新..."
+    echo "后端程序正在运行,现在停止程序..."
     kill -9 $pid
 fi
 
