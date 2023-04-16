@@ -307,8 +307,6 @@ ExecStart=$(which pnpm) run start
 Restart=always
 ExecReload=/bin/kill -s HUP \$MAINPID
 ExecStop=/bin/kill -s QUIT \$MAINPID
-StandardOutput=null
-StandardError=null
 Restart=always
 TimeoutStopSec=5s
 
