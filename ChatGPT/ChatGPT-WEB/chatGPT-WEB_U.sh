@@ -250,7 +250,6 @@ function NGINX() {
 # 拷贝后端并启动
 echo
 ${SETCOLOR_SUCCESS} && echo "-----------------------------------<后端部署>-----------------------------------" && ${SETCOLOR_NORMAL}
-echo ${PWD}
 \cp -fr ${ORIGINAL}/${CHATDIR}/${SERDIR} ${WEBDIR}
 # 检测返回值
 if [ $? -eq 0 ]; then
