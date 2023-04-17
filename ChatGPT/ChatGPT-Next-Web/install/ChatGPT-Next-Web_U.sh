@@ -63,6 +63,9 @@ ${SETCOLOR_SUCCESS} && echo "-------------------------------<检测服务是否�
 pid=$(lsof -t -i:3000)
 if [ -z "$pid" ]; then
     echo "后端程序未运行"
+    if [ -d "${ORIGINAL}/${CHATDIR}" ]; then
+       rm -rf ${ORIGINAL}/${CHATDIR}
+    fi
 else
     echo "后端程序正在运行,现在停止程序并更新..."
     kill -9 $pid
