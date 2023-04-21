@@ -82,6 +82,7 @@ else
   # 下载并安装RPM包
   yum -y install wget git openssl-devel pcre-devel zlib-devel gd-devel &>/dev/null
   yum -y install pcre2 &>/dev/null
+  rm -f nginx-1.22.1-1.el7.ngx.x86_64.rpm
   wget http://nginx.org/packages/centos/7/x86_64/RPMS/nginx-1.22.1-1.el7.ngx.x86_64.rpm &>/dev/null
   yum -y install nginx-1.22.1-1.el7.ngx.x86_64.rpm &>/dev/null
   if [ $? -ne 0 ]; then
