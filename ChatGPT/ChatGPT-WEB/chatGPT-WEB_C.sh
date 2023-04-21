@@ -84,8 +84,14 @@ else
   yum -y install pcre2 &>/dev/null
   wget http://nginx.org/packages/centos/7/x86_64/RPMS/nginx-1.22.1-1.el7.ngx.x86_64.rpm &>/dev/null
   yum -y install nginx-1.22.1-1.el7.ngx.x86_64.rpm 2>&1 >/dev/null | grep -E "error|fail|warning"
-  echo "Nginx installed."
-  rm -f nginx-1.22.1-1.el7.ngx.x86_64.rpm
+  if [ $? -ne 0 ]; then
+    echo "安装失败，请手动安装，安装成功之后再次执行脚本！"
+    echo "命令：wget http://nginx.org/packages/centos/7/x86_64/RPMS/nginx-1.22.1-1.el7.ngx.x86_64.rpm && yum -y install nginx-1.22.1-1.el7.ngx.x86_64.rpm"
+    exit 1
+  else
+    echo "Nginx installed."
+    rm -f nginx-1.22.1-1.el7.ngx.x86_64.rpm
+  fi
 fi
 
 
