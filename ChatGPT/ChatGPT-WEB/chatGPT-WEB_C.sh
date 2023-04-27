@@ -119,6 +119,9 @@ if [[ ${NETWORK} == 1 ]];then
     cd ${ORIGINAL} && git clone ${GITGPT}
 elif [[ ${NETWORK} == 2 ]];then
     cd ${ORIGINAL} && git clone https://ghproxy.com/${GITGPT}
+else
+   ERROR "Parameter Error"
+   exit 1
 fi
 SUCCESS_END
 }
