@@ -39,7 +39,7 @@ printf "%*s\033[31m%s\033[0m%*s\n" $padding "" "$text" $padding ""
 SUCCESS "执行完成"
 
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
-if [ ${NETWORK} == 1 ];then
+if [[ ${NETWORK} == 1 ]];then
     if [ -f /etc/redhat-release ]; then
         INFO "《This is CentOS.》"
         SUCCESS "系统环境检测中，请稍等..."
@@ -58,7 +58,7 @@ if [ ${NETWORK} == 1 ];then
         echo "Unknown Linux distribution."
         exit 2
     fi
-elif [ ${NETWORK} == 2 ];then
+elif [[ ${NETWORK} == 2 ]];then
         if [ -f /etc/redhat-release ]; then
         INFO "《This is CentOS.》"
         SUCCESS "系统环境检测中，请稍等..."
