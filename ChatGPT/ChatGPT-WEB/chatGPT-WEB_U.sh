@@ -100,7 +100,7 @@ if [[ ${NETWORK} == 1 ]];then
 elif [[ ${NETWORK} == 2 ]];then
     cd ${ORIGINAL} && apt install git -y && git clone https://ghproxy.com/${GITGPT}
 else
-   ERROR "Parameter Error"
+   ${SETCOLOR_RED} && echo "Parameter Error" && ${SETCOLOR_NORMAL}
    exit 1
 fi
 SUCCESS_END
