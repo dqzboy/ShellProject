@@ -95,10 +95,13 @@ SUCCESS_END
 ${SETCOLOR_NORMAL}
 
 read -e -p "请选择你的服务器网络环境[国外1/国内2]： " NETWORK
-if [ ${NETWORK} == 1 ];then
+if [[ ${NETWORK} == 1 ]];then
     cd ${ORIGINAL} && apt install git -y && git clone ${GITGPT}
-elif [ ${NETWORK} == 2 ];then
+elif [[ ${NETWORK} == 2 ]];then
     cd ${ORIGINAL} && apt install git -y && git clone https://ghproxy.com/${GITGPT}
+else
+   ERROR "Parameter Error"
+   exit 1
 fi
 SUCCESS_END
 }
