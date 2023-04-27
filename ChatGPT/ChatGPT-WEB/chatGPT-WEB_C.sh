@@ -366,6 +366,7 @@ fi
 # 删除源码包文件
 function DELSOURCE() {
   rm -rf ${ORIGINAL}/${CHATDIR}
+  echo "访问网站：http://your_vps_ip:80"
   ${SETCOLOR_SUCCESS} && echo "-----------------------------------<部署完成>-----------------------------------" && ${SETCOLOR_NORMAL}
 }
 
