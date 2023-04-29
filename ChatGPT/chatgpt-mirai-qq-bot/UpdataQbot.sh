@@ -3,6 +3,16 @@ SETCOLOR_SKYBLUE="echo -en \\E[1;36m"
 SETCOLOR_SUCCESS="echo -en \\E[0;32m"
 SETCOLOR_NORMAL="echo  -en \\E[0;39m"
 SETCOLOR_RED="echo  -en \\E[0;31m"
+echo
+cat << EOF
+ ██████╗ ██████╗ ████████╗     ██████╗  ██████╗     ██████╗  ██████╗ ████████╗
+██╔════╝ ██╔══██╗╚══██╔══╝    ██╔═══██╗██╔═══██╗    ██╔══██╗██╔═══██╗╚══██╔══╝
+██║  ███╗██████╔╝   ██║       ██║   ██║██║   ██║    ██████╔╝██║   ██║   ██║   
+██║   ██║██╔═══╝    ██║       ██║▄▄ ██║██║▄▄ ██║    ██╔══██╗██║   ██║   ██║   
+╚██████╔╝██║        ██║       ╚██████╔╝╚██████╔╝    ██████╔╝╚██████╔╝   ██║   
+ ╚═════╝ ╚═╝        ╚═╝        ╚══▀▀═╝  ╚══▀▀═╝     ╚═════╝  ╚═════╝    ╚═╝   
+                                                                              
+EOF
 
 
 SUCCESS() {
@@ -21,10 +31,13 @@ if [ -f "/opt/config.cfg" ]; then
   # 如果存在，则删除旧的并拷贝新的
   rm /opt/config.cfg
   SUCCESS "旧版备份文件存在，执行删除"
+  cp /data/chatgpt-mirai-qq-bot/config.cfg /opt/config.cfg
+  \cp /data/chatgpt-mirai-qq-bot/config.cfg /data/config_bak/
+  SUCCESS "拷贝新文件进行备份完成！"
+else
+  ERROR "配置文件不存在，退出升级！"
+  exit 1
 fi
-cp /data/chatgpt-mirai-qq-bot/config.cfg /opt/config.cfg
-\cp /data/chatgpt-mirai-qq-bot/config.cfg /data/config_bak/
-SUCCESS "拷贝新文件进行备份完成！"
 
 # 下载最新版本
 if [ -f "/opt/config.cfg" ]; then
