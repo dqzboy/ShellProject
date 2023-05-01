@@ -13,6 +13,7 @@ yum -y install wget
 # Ubuntu
 apt -y install wget
 
+# CentOS 7 or Ubuntu
 wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/env.example
 bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_Build.sh)"
 
