@@ -1,5 +1,5 @@
 ## 脚本执行流程演示
-- **说明**：目前该脚本采用源码编译部署，非容器化运行；脚本适用于CentOS 7、Ubuntu系统
+- **说明**：目前该脚本采用源码编译部署，非容器化运行；脚本适用于CentOS 7、Ubuntu系统、RHEL-8 and CentOS-8
 - **重要**：下载仓库下面的`env.example`配置文件到你运行脚本的目录下，例如下面中的/data/chatgpt-web，执行脚本前记得修改文件里的相关参数，例如API KEY等信息
 - **注意**：如果服务器已经安装了Nginx，那么构建之前请指定ChatGPT-WEB前端项目存放的Nginx根路径
 - **版本更新**：更新chatGPT-web版本，只需要再次执行部署脚本即可，`env`文件无需变更；注意：更新之后强刷浏览器或者无痕模式打开
@@ -15,6 +15,10 @@ apt -y install wget
 
 wget https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/env.example
 bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/chatGPT-WEB_Build.sh)"
+
+# RHEL-8 and CentOS-8
+dnf -y install wget
+bash -c "$(wget -q -O- https://raw.githubusercontent.com/dqzboy/ShellProject/main/ChatGPT/ChatGPT-WEB/rel8/chatGPT-WEB_el8.sh)"
 ```
 <table>
     <tr>
