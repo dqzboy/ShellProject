@@ -41,6 +41,9 @@ function SUCCESS_END() {
 ${SETCOLOR_SUCCESS} && echo "-------------------------------------< END >-------------------------------------" && ${SETCOLOR_NORMAL}
 echo
 }
+function PROMPT() {
+${SETCOLOR_SKYBLUE} && echo "$1"  && ${SETCOLOR_NORMAL}
+}
 
 function CHECKFIRE() {
 SUCCESS_ON
@@ -119,7 +122,8 @@ function INFO() {
 # 交互输入ENV环境配置
 if [ -f .env ]; then
   last_input=$(cat .env)
-  read -e -p "请输入OPENAI_API_KEY/页面访问密码/代理地址,请用空格分隔[上次记录：${last_input} 回车用上次记录]：" ENV_LOCAL
+  PROMPT "请在下面输入OPENAI_API_KEY/页面访问密码/代理地址(eg：http://127.0.0.1:7890),并用空格分隔;国外VPS代理可不写"
+  read -e -p "请在此处填写,用空格分隔[上次记录：${last_input} 回车用上次记录]：" ENV_LOCAL
   if [ -z "${ENV_LOCAL}" ];then
       ENV_LOCAL="$last_input"
       API_KEY=$(echo "${ENV_LOCAL}" | cut -d' ' -f1)
@@ -137,7 +141,8 @@ if [ -f .env ]; then
       ${SETCOLOR_SUCCESS} && echo "当前代理地址为：${PROXY_URL}" && ${SETCOLOR_NORMAL}
   fi
 else
-  read -e -p "请输入OPENAI_API_KEY/页面访问密码/代理地址,请用空格分隔：" ENV_LOCAL
+  PROMPT "请在下面输入OPENAI_API_KEY/页面访问密码/代理地址(eg：http://127.0.0.1:7890),并用空格分隔;国外VPS代理可不写"
+  read -e -p "请在此处填写,用空格分隔：" ENV_LOCAL
   if [ -z "${ENV_LOCAL}" ];then
       ${SETCOLOR_RED} && echo "您没输入OPENAI_API_KEY,部署完成后将无法正常使用！！" && ${SETCOLOR_NORMAL}
   else
@@ -215,6 +220,19 @@ then
     if ss -tuln | grep ":3000" > /dev/null
     then
         echo "chatgpt-next-web后端服务已成功启动"
+        PROMPT "首次安装,如需使用域名或80端口访问,请将如下配置加入到Nginx配置文件的server块中."
+echo
+cat << EOF
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;        
+        proxy_set_header X-Nginx-Proxy true;
+        proxy_buffering off;
+        proxy_redirect off;
+    }
+EOF
     else
         echo
         echo "ERROR：后端服务端口 3000 未在监听"
