@@ -17,7 +17,7 @@ SETCOLOR_RED="echo  -en \\E[0;31m"
 SETCOLOR_YELLOW="echo -en \\E[1;33m"
 
 echo
-cat << EOF
+cat << \EOF
 
  $$$$$$\  $$$$$$$\  $$$$$$$$\       $$\   $$\        $$$$$$\  $$\   $$\ 
 $$  __$$\ $$  __$$\ $$  _____|      $$ |  $$ |      $$  __$$\ $$ | $$  |
