@@ -6,14 +6,14 @@ body:
     attributes:
       value: |
         ### ⚠️ 前置确认
-        1. 网络能够访问openai接口
+        1. 网络是否正常
         2. 是否最新脚本
-        3. 服务器规格是否> 1C1G
+        3. 服务器资源是否足够运行程序
   - type: checkboxes
     attributes:
       label: 前置确认
       options:
-        - label: 我确认我的网络可以访问openai，使用的是最新脚本，并且服务器规格 > 1C1G
+        - label: 我确认我的网络正常，使用的是最新脚本，并且服务器资源足够运行程序
           required: true
   - type: checkboxes
     attributes:
