@@ -33,7 +33,7 @@ log_dir="/var/log"
 timestamp=$(date -d "3 days ago" +%Y%m%d)
 
 # 遍历日志文件
-for file 在 $log_dir/boot.log-* $log_dir/btmp-* $log_dir/cron-* $log_dir/hawkey.log-* $log_dir/maillog-* $log_dir/messages-* $log_dir/secure-* $log_dir/spooler-*
+for file in $log_dir/boot.log-* $log_dir/btmp-* $log_dir/cron-* $log_dir/hawkey.log-* $log_dir/maillog-* $log_dir/messages-* $log_dir/secure-* $log_dir/spooler-*
 do
     # 检查文件是否符合条件
     if [[ -f $file ]]
