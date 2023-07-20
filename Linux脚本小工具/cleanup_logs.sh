@@ -30,7 +30,7 @@ EOF
 log_dir="/var/log"
 
 # 获取3天前的日期
-timestamp=$(date -d "3 天之前" +%Y%m%d)
+timestamp=$(date -d "3 days ago" +%Y%m%d)
 
 # 遍历日志文件
 for file 在 $log_dir/boot.log-* $log_dir/btmp-* $log_dir/cron-* $log_dir/hawkey.log-* $log_dir/maillog-* $log_dir/messages-* $log_dir/secure-* $log_dir/spooler-*
