@@ -25,27 +25,25 @@ EOF
 # 颜色定义
 GREEN_LIGHT="\033[1;32m"
 RED="\033[0;31m"
+CYAN="\033[0;36m"
 NC="\033[0m" # 恢复默认颜色
 
-# 提示用户使用修改后的IP地址连接服务器
+# 显示连接服务器的提示
 function display_connect_instructions() {
-    local connect_instructions="${RED}脚本执行完成后,必须使用以下 IP 重新连接服务器！"
+    local connect_instructions="${RED}脚本执行完成后,必须使用以下 IP 重新连接服务器！${NC}"
     local interface="$1"
     local new_ip="$2"
-    local prompt_length=${#connect_instructions}
-
-    # 计算虚线框的长度
-    local frame_length=$((prompt_length + 6))
 
     # 构建虚线框
+    local frame_length=${#connect_instructions}
     local frame=""
-    for ((i=1; i<=frame_length; i++)); do
-        frame+="="
+    for ((i=1; i<=frame_length+4; i++)); do
+        frame+="-"
     done
 
-    echo -e "${RED}$frame${NC}"
-    echo -e "${RED}|| ${connect_instructions} ${GREEN_LIGHT}${new_ip}${NC} ${RED}||${NC}"
-    echo -e "${RED}$frame${NC}"
+    echo -e "${CYAN}+${frame}+${NC}"
+    echo -e "${CYAN}|  ${connect_instructions}  ${CYAN}|${NC}"
+    echo -e "${CYAN}+${frame}+${NC}"
 }
 
 # 显示可用的网络接口
@@ -91,7 +89,6 @@ function prompt_for_ip() {
 
         # 断开并重新连接网络接口
         nmcli connection down "$interface" && nmcli connection up "$interface"
-        echo -e "${GREEN_LIGHT}网络配置已成功更新。${NC}"
     else
         echo -e "${GREEN_LIGHT}错误：无效的 IP 地址格式。请输入一个有效的 IPv4 地址。${NC}"
         exit 1
@@ -110,4 +107,3 @@ else
     display_interfaces
     exit 1
 fi
-
