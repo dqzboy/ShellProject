@@ -62,13 +62,14 @@ function modify_connection_file() {
         cp "$connection_file" "$connection_file.bak"
 
         # 使用用户输入的 IP 地址修改 IPv4 地址
-        sed -i "s/address1=.*/address1=$user_input_ip\/24/" "$connection_file"
+	sed -i -E "s/address1=([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/address1=$user_input_ip/" "$connection_file"
         echo -e "${GREEN_LIGHT}已将 $1.nmconnection 文件的 IP 地址修改为：$user_input_ip${NC}"
     else
         echo -e "${GREEN_LIGHT}错误：找不到 $1.nmconnection 文件。${NC}"
         exit 1
     fi
 }
+
 
 # 重新加载指定的网卡配置文件
 function reload_connection() {
