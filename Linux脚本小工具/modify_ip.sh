@@ -5,7 +5,7 @@
 # 
 #         USAGE: ./modify_ip.sh
 # 
-#   DESCRIPTION: CentOS 8+ 使用nmcli指令自动化修改网卡IP，配合NetworkManager使用
+#   DESCRIPTION: RHEL 8发行版OS 使用nmcli指令自动化修改网卡IP，配合NetworkManager使用
 # 
 #  ORGANIZATION: dqzboy.com
 #       CREATED: 2022
