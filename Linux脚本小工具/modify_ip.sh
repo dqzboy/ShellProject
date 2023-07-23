@@ -52,57 +52,71 @@ function display_interfaces() {
     nmcli device status
 }
 
-# 加载并修改 .nmconnection 文件中的 IP 地址
-function modify_connection_file() {
-    local connection_file="/etc/NetworkManager/system-connections/$1.nmconnection"
-    local user_input_ip="$2"
+# 加载并修改 nmcli 连接配置为静态IP
+function modify_connection() {
+    local interface="$1"
+    local new_ip="$2"
+    local gateway="$3"
+    local subnet_mask="$4"
+    local dns_servers="$5"
 
-    if [ -f "$connection_file" ]; then
-        # 备份原始 .nmconnection 文件
-        cp "$connection_file" "$connection_file.bak"
+    nmcli connection modify "$interface" ipv4.addresses "$new_ip/$subnet_mask" ipv4.gateway "$gateway" ipv4.dns "$dns_servers" ipv4.method manual connection.autoconnect yes
 
-        # 使用用户输入的 IP 地址修改 IPv4 地址
-	sed -i -E "s/address1=([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/address1=$user_input_ip/" "$connection_file"
-        echo -e "${GREEN_LIGHT}已将 $1.nmconnection 文件的 IP 地址修改为：$user_input_ip${NC}"
+    # 检查是否执行成功
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN_LIGHT}已将 $interface 的网络配置修改为静态IP：IP地址：$new_ip，网关：$gateway，DNS服务器：$dns_servers${NC}"
     else
-        echo -e "${GREEN_LIGHT}错误：找不到 $1.nmconnection 文件。${NC}"
+        echo -e "${RED}修改 $interface 的网络配置失败。请检查输入信息和网络接口是否正确，并重新执行脚本。${NC}"
         exit 1
     fi
 }
 
+# 检查用户输入的IP地址和子网掩码格式是否正确
+function check_ip_format() {
+    local ip="$1"
 
-# 重新加载指定的网卡配置文件
-function reload_connection() {
-    local interface="$1"
-    nmcli connection reload "$interface"
-    echo -e "${GREEN_LIGHT}已重新加载 $interface 的网络配置。${NC}"
+    # 使用正则表达式检查IP地址和子网掩码格式
+    if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
-# 提示用户输入 IP 地址
-function prompt_for_ip() {
+# 提示用户输入网络配置信息
+function prompt_for_network_config() {
     local interface="$1"
-    read -p "$(echo -e "${GREEN_LIGHT}请输入 $interface 的新 IP 地址：${NC}")" new_ip
 
-    # 检查用户输入的是否是有效的 IP 地址
-    if [[ $new_ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        modify_connection_file "$interface" "$new_ip"
-        reload_connection "$interface"
+    # 循环提示用户输入，直到格式正确
+    while true; do
+        read -e -p "$(echo -e "${GREEN_LIGHT}请输入 $interface 的新 IP 地址和子网掩码（格式为IP/子网掩码）：${NC}")" new_ip
 
-        # 断开并重新连接网络接口
-        nmcli connection down "$interface" && nmcli connection up "$interface"
-    else
-        echo -e "${GREEN_LIGHT}错误：无效的 IP 地址格式。请输入一个有效的 IPv4 地址。${NC}"
-        exit 1
-    fi
+        # 检查用户输入是否是有效的 IP 地址和子网掩码格式
+        if check_ip_format "$new_ip"; then
+            break
+        else
+            echo -e "${GREEN_LIGHT}错误：无效的 IP 地址和子网掩码格式。请重新输入一个有效的 IPv4 地址和子网掩码。${NC}"
+        fi
+    done
+
+    read -e -p "$(echo -e "${GREEN_LIGHT}请输入 $interface 的网关地址：${NC}")" gateway
+    read -e -p "$(echo -e "${GREEN_LIGHT}请输入 $interface 的DNS服务器地址（多个DNS服务器用空格分隔）：${NC}")" dns_servers
+
+    # 解析用户输入的IP地址和子网掩码
+    local new_ip_address="$(echo "$new_ip" | cut -d'/' -f1)"
+    local subnet_mask="$(echo "$new_ip" | cut -d'/' -f2)"
+
+    modify_connection "$interface" "$new_ip_address" "$gateway" "$subnet_mask" "$dns_servers"
+    nmcli con down "$interface" && nmcli con up "$interface"
 }
 
 # 获取当前活动的网络接口名称
 active_interface=$(nmcli device status | grep -E '\sconnected\s' | awk '{print $1}')
 
-# 提示用户使用修改后的IP地址连接服务器
+# 提示用户使用修改后的网络配置连接服务器
 if [ -n "$active_interface" ]; then
     display_connect_instructions "$active_interface" "$new_ip"
-    prompt_for_ip "$active_interface"
+    prompt_for_network_config "$active_interface"
 else
     echo -e "${GREEN_LIGHT}错误：未找到活动的网络接口。${NC}"
     display_interfaces
