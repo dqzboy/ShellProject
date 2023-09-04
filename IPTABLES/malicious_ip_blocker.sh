@@ -1,4 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#===============================================================================
+#
+#          FILE: malicious_ip_blocker.sh
+# 
+#         USAGE: ./malicious_ip_blocker.sh
+#   DESCRIPTION: lastb获取登入失败的IP，调用 iptables 限制恶意尝试登入的IP
+# 
+#  ORGANIZATION: dqzboy.com
+#===============================================================================
 
 # 获取登录失败的IP地址（仅提取有效的IP地址）
 MALICIOUS_IPS=$(lastb -i | awk '$3 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {print $3}' | sort | uniq)
