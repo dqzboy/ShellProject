@@ -9,6 +9,9 @@
 #  ORGANIZATION: dqzboy.com
 #===============================================================================
 
+iptables=$(command -v iptables)
+iptables_save=$(command -v iptables-save)
+
 # 获取登录失败的IP地址（仅提取有效的IP地址）
 MALICIOUS_IPS=$(lastb -i | awk '$3 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {print $3}' | sort | uniq)
 
@@ -37,7 +40,7 @@ for ip in $MALICIOUS_IPS; do
     fi
 
     echo "Blocking malicious IP: $ip"
-    iptables -A INPUT -s "$ip" -j DROP
+    ${iptables} -A INPUT -s "$ip" -j DROP
 
     # 查询IP归属地并保存到临时文件
     curl -s "http://www.cip.cc/$ip" > temp.txt
@@ -55,4 +58,4 @@ for ip in $MALICIOUS_IPS; do
 done
 
 # 保存防火墙规则
-iptables-save >/dev/null
+${iptables_save} >/dev/null
