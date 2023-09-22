@@ -9,6 +9,7 @@
 #  ORGANIZATION: dqzboy.com
 #===============================================================================
 
+#!/usr/bin/env bash
 iptables=$(command -v iptables)
 iptables_save=$(command -v iptables-save)
 
@@ -21,6 +22,15 @@ OUTPUT_FILE="malicious_ips.txt"
 # 之前已被拉黑的IP地址列表
 BLACKLISTED_IPS="blacklisted_ips.txt"
 
+# 白名单IP文件
+WHITELIST_FILE="whitelist.txt"
+
+# 交互式输入白名单IP
+read -e -p "请输入白名单IP（多个IP以英文逗号分隔）：" WHITELIST_INPUT
+
+# 将用户输入的白名单IP写入白名单文件
+echo "$WHITELIST_INPUT" | tr ',' '\n' > "$WHITELIST_FILE"
+
 # 从之前已拉黑的IP文件中读取
 if [ -f "$BLACKLISTED_IPS" ]; then
     PREVIOUSLY_BLACKLISTED_IPS=$(cat "$BLACKLISTED_IPS")
@@ -28,11 +38,24 @@ else
     PREVIOUSLY_BLACKLISTED_IPS=""
 fi
 
+# 如果白名单文件存在，读取白名单IP
+if [ -f "$WHITELIST_FILE" ]; then
+    WHITELIST=$(cat "$WHITELIST_FILE")
+else
+    WHITELIST=""
+fi
+
 # 清空文件内容
 > "$OUTPUT_FILE"
 
 # 遍历恶意IP地址列表，添加防火墙规则并查询IP归属地
 for ip in $MALICIOUS_IPS; do
+    # 如果IP已在白名单中，跳过
+    if echo "$WHITELIST" | grep -q "$ip"; then
+        echo "IP $ip is whitelisted. Skipping..."
+        continue
+    fi
+
     # 如果IP已经被拉黑，跳过
     if echo "$PREVIOUSLY_BLACKLISTED_IPS" | grep -q "$ip"; then
         echo "IP $ip already blocked. Skipping..."
