@@ -16,14 +16,14 @@ iptables_save=$(command -v iptables-save)
 # 获取登录失败的IP地址（仅提取有效的IP地址）
 MALICIOUS_IPS=$(lastb -i | awk '$3 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {print $3}' | sort | uniq)
 
+CURR_DIR=$PWD
 # 文件保存查询结果
-OUTPUT_FILE="malicious_ips.txt"
-
+OUTPUT_FILE="${CURR_DIR}/malicious_ips.txt"
 # 之前已被拉黑的IP地址列表
-BLACKLISTED_IPS="blacklisted_ips.txt"
+BLACKLISTED_IPS="${CURR_DIR}/blacklisted_ips.txt"
 
 # 白名单IP文件
-WHITELIST_FILE="whitelist.txt"
+WHITELIST_FILE="${CURR_DIR}/whitelist.txt"
 
 # 交互式输入白名单IP
 read -e -p "请输入白名单IP（多个IP以英文逗号分隔）：" WHITELIST_INPUT
