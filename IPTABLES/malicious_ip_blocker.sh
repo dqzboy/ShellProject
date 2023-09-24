@@ -26,11 +26,11 @@ BLACKLISTED_IPS="${CURR_DIR}/blacklisted_ips.txt"
 # 白名单IP文件
 WHITELIST_FILE="${CURR_DIR}/whitelist.txt"
 
-# 交互式输入白名单IP
-read -e -p "请输入白名单IP（多个IP以英文逗号分隔）：" WHITELIST_INPUT
+# 交互式输入白名单IP;如果是要配合定时任务执行脚本,那么这里就不要开启交互式,而是提前创建白名单文件并把IP写入到白名单文件中
+#read -e -p "请输入白名单IP（多个IP以英文逗号分隔）：" WHITELIST_INPUT
 
 # 将用户输入的白名单IP写入白名单文件
-echo "$WHITELIST_INPUT" | tr ',' '\n' > "$WHITELIST_FILE"
+#echo "$WHITELIST_INPUT" | tr ',' '\n' > "$WHITELIST_FILE"
 
 # 从之前已拉黑的IP文件中读取
 if [ -f "$BLACKLISTED_IPS" ]; then
