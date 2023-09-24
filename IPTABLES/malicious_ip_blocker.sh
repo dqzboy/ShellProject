@@ -16,7 +16,8 @@ iptables_save=$(command -v iptables-save)
 # 获取登录失败的IP地址（仅提取有效的IP地址）
 MALICIOUS_IPS=$(lastb -i | awk '$3 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {print $3}' | sort | uniq)
 
-CURR_DIR=$PWD
+# 黑白名单存储的目录
+CURR_DIR="/opt"
 # 文件保存查询结果
 OUTPUT_FILE="${CURR_DIR}/malicious_ips.txt"
 # 之前已被拉黑的IP地址列表
