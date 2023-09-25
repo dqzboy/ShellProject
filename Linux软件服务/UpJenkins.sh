@@ -56,6 +56,7 @@ systemctl stop tomcat
 if [ -f "${tomcat_webapps_dir}/jenkins.war" ]; then
   echo "Removing old Jenkins war file..."
   rm "${tomcat_webapps_dir}/jenkins.war"
+  rm -rf "${tomcat_webapps_dir}/jenkins"
 fi
 
 # 拷贝新的Jenkins war包到Tomcat目录
