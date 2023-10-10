@@ -29,23 +29,26 @@ EOF
 # 指定日志文件所在目录
 log_dir="/var/log"
 
+# 定义日志前缀列表
+log_prefixes=("boot.log" "btmp" "cron" "hawkey.log" "maillog" "messages" "secure" "spooler")
+
 # 获取3天前的日期
 timestamp=$(date -d "3 days ago" +%Y%m%d)
 
-# 遍历日志文件
-for file in $log_dir/boot.log-* $log_dir/btmp-* $log_dir/cron-* $log_dir/hawkey.log-* $log_dir/maillog-* $log_dir/messages-* $log_dir/secure-* $log_dir/spooler-*
+# 遍历日志前缀
+for prefix in "${log_prefixes[@]}"
 do
-    # 检查文件是否符合条件
-    if [[ -f $file ]]
-    then
-        # 提取文件名的开头部分
-        filename=$(basename $file)
-        prefix=${filename%%-*}
+    # 生成日志文件路径
+    file_path="$log_dir/$prefix-"
 
-        # 检查文件名开头是否匹配指定的前缀
-        if [[ $prefix =~ ^(boot\.log|btmp|cron|hawkey\.log|maillog|messages|secure|spooler)$ ]]
+    # 遍历日志文件
+    for file in $file_path*
+    do
+        # 检查文件是否符合条件
+        if [[ -f $file ]]
         then
             # 提取文件名的日期部分
+            filename=$(basename $file)
             file_date=${filename#*-}
 
             # 检查文件是否是3天前的文件
@@ -55,5 +58,5 @@ do
                 rm -f $file
             fi
         fi
-    fi
+    done
 done
