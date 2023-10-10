@@ -5,7 +5,8 @@
 # 
 #         USAGE: ./malicious_ip_blocker.sh
 #   DESCRIPTION: lastb获取登入失败的IP，调用 iptables 限制恶意尝试登入的IP
-# 
+#   在 /opt 目录下手动创建whitelist.txt白名单文件，并写入白名单IP，每行一个IP
+#   crontab eg：0 0 * * * /bin/bash malicious_ip_blocker.sh > /tmp/malicious_ip_blocker.log 2>&1 && echo "[执行时间: $(date '+\%Y-\%m-\%d \%H:\%M:\%S')]" >> /tmp/malicious_ip_blocker.log
 #  ORGANIZATION: dqzboy.com
 #===============================================================================
 
