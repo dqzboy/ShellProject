@@ -10,9 +10,10 @@
 #  ORGANIZATION: dqzboy.com
 #===============================================================================
 
-#!/usr/bin/env bash
-iptables=$(command -v iptables)
-iptables_save=$(command -v iptables-save)
+#iptables=$(command -v iptables)
+#iptables_save=$(command -v iptables-save)
+iptables="/usr/sbin/iptables"
+iptables_save="/usr/sbin/iptables-save"
 
 # 获取登录失败的IP地址（仅提取有效的IP地址）
 MALICIOUS_IPS=$(lastb -i | awk '$3 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {print $3}' | sort | uniq)
