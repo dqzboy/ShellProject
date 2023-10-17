@@ -48,8 +48,8 @@ else
     WHITELIST=""
 fi
 
-# 清空文件内容
-> "$OUTPUT_FILE"
+# 如果文件不存在，则创建文件
+touch "$OUTPUT_FILE"
 
 # 遍历恶意IP地址列表，添加防火墙规则并查询IP归属地
 for ip in $MALICIOUS_IPS; do
