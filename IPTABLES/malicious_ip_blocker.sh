@@ -87,7 +87,7 @@ for ip in $MALICIOUS_IPS; do
 done
 
 # 执行命令并将结果存储到变量中
-drop_count=$(iptables -L INPUT -n | grep DROP | wc -l)
+drop_count=`${iptables} -L INPUT -n | grep DROP | wc -l`
 
 # 打印变量的值
 echo "-------------------------------------------------"
