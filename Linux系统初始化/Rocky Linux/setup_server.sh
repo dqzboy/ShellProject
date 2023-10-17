@@ -2,13 +2,12 @@
 #===============================================================================
 #
 #          FILE: setup_server.sh
-# 
+#
 #         USAGE: ./setup_server.sh
 #
-#        DESCRIPTION: Rocky Linux 9 系统一键系统初始化
-#
-#      ORGANIZATION: Ding QiN Zheng dqzboy.com
+#       ORGANIZATION: Ding Qin Zheng
 #===============================================================================
+
 SETCOLOR_SKYBLUE="echo -en \\E[1;36m"
 SETCOLOR_SUCCESS="echo -en \\E[0;32m"
 SETCOLOR_NORMAL="echo  -en \\E[0;39m"
@@ -95,7 +94,7 @@ fi
 
 INFO "调整NetworkManager"
 SUCCESS1 "调整NetworkManager配置，防止重启网卡自动恢复默认的DNS配置"
-if ! grep -q "dns=none" /etc/NetworkManager/NetworkManager.conf; then
+if ! grep "dns=none" /etc/NetworkManager/NetworkManager.conf &>/dev/null; then
     sed -i '/plugins=keyfile/a\dns=none' /etc/NetworkManager/NetworkManager.conf
     SUCCESS1 "NetworkManager配置已更新"
 
@@ -115,15 +114,16 @@ check_command "调整NetworkManager"
 
 function systemd_pager() {
 INFO "规避系统分页显示"
-if ! grep -q "SYSTEMD_PAGER" /etc/profile; then
-    cat >> /etc/profile <<\EOF
-    export SYSTEMD_PAGER=""
+if ! grep "SYSTEMD_PAGER" /etc/profile &>/dev/null;then
+cat >> /etc/profile <<\EOF
+export SYSTEMD_PAGER=""
 EOF
     source /etc/profile
     SUCCESS1 "已成功设置 SYSTEMD_PAGER"
 else
     SUCCESS1 "SYSTEMD_PAGER配置已经是最新的"
 fi
+
 check_command "分页显示规避"
 }
 
@@ -151,19 +151,20 @@ check_command "Swap交换分区关闭"
 
 function os_setup() {
 INFO "开启系统历史命令记录"
-if ! grep -q 'HISTTIMEFORMAT' /etc/profile;then
+if ! grep 'HISTTIMEFORMAT' /etc/profile &>/dev/null;then
     echo 'export HISTTIMEFORMAT="[执行时间:%F %T] [执行用户:`whoami`] "' >> /etc/profile
 fi
 source /etc/profile
 
-if ! grep -q 'HISTTIMEFORMAT' ~/.bashrc;then
+if ! grep 'HISTTIMEFORMAT' ~/.bashrc &>/dev/null;then
     echo 'export HISTTIMEFORMAT="[执行时间:%F %T] [执行用户:`whoami`] "' >> ~/.bashrc
 fi
 source ~/.bashrc
+
 check_command "系统历史命令记录修改"
 
 INFO "禁止定时任务发送邮件"
-if [ -z "$(grep -q MAILCHECK /etc/profile)" ];then
+if ! grep 'unset MAILCHECK' /etc/profile;then
     echo 'unset MAILCHECK'>>/etc/profile
 fi
 sed -i "s/^MAILTO=root/MAILTO=\"\"/g" /etc/crontab
@@ -211,12 +212,12 @@ check_command "系统内核参数调整"
 
 
 INFO "调整系统文件描述符"
-if ! grep -q "* soft nofile 65535" /etc/security/limits.conf;then
-    cat >> /etc/security/limits.conf <<EOF
-    * soft nofile 65535
-    * hard nofile 65535
-    * soft nproc 65535
-    * hard nproc 65535
+if ! grep "* soft nofile 65535" /etc/security/limits.conf &>/dev/null;then
+cat >> /etc/security/limits.conf <<EOF
+* soft nofile 65535
+* hard nofile 65535
+* soft nproc 65535
+* hard nproc 65535
 EOF
 fi
 check_command "系统文件描述符调整"
@@ -263,6 +264,20 @@ EOF
 fi
 
 source /etc/profile
+
+if ! grep -q "rm_prompt" ~/.bashrc;then
+cat >> ~/.bashrc <<\EOF
+alias rm='rm_prompt'
+rm_prompt() {
+    read -e -p "Are you sure you want to remove? [y/n] " choice
+    if [ "$choice" == "y" ]; then
+        /bin/rm "$@"
+    fi
+}
+EOF
+fi
+
+source ~/.bashrc
 check_command "调整rm命令操作"
 }
 
