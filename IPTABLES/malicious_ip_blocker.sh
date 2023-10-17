@@ -15,6 +15,9 @@
 iptables="/usr/sbin/iptables"
 iptables_save="/usr/sbin/iptables-save"
 
+# 获取当前的日期和时间并保存在变量中
+current_time=$(date +"%Y-%m-%d %H:%M:%S")
+
 # 获取登录失败的IP地址（仅提取有效的IP地址）
 MALICIOUS_IPS=$(lastb -i | awk '$3 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ {print $3}' | sort | uniq)
 
@@ -82,6 +85,14 @@ for ip in $MALICIOUS_IPS; do
     # 添加延迟，避免频繁查询
     sleep 2
 done
+
+# 执行命令并将结果存储到变量中
+drop_count=$(iptables -L INPUT -n | grep DROP | wc -l)
+
+# 打印变量的值
+echo "-------------------------------------------------"
+echo "$current_time: DROP 规则的总数是：$drop_count"
+echo "-------------------------------------------------"
 
 # 保存防火墙规则
 ${iptables_save} >/dev/null
