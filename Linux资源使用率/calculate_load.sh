@@ -13,21 +13,33 @@
 # 获取CPU核心数量
 cpu_cores=$(grep -c ^processor /proc/cpuinfo)
 
-# 获取top命令的输出
-top_output=$(top -n 1)
+# 使用uptime命令获取系统负载平均值
+load_averages=$(uptime | awk -F'average:' '{print $2}' | tr -d ',')
 
-# 获取top命令的load average值，并去掉逗号
-load_1min=$(echo "$top_output" | grep -oP 'load average: \K[0-9.]+(?=,)')
-load_5min=$(echo "$top_output" | grep -oP 'load average: [0-9.]+, \K[0-9.]+(?=,)')
-load_15min=$(echo "$top_output" | grep -oP 'load average: [0-9.]+, [0-9.]+, \K[0-9.]+')
+# 提取1分钟、5分钟和15分钟的负载值
+load_1min=$(echo "$load_averages" | awk '{print $1}')
+load_5min=$(echo "$load_averages" | awk '{print $2}')
+load_15min=$(echo "$load_averages" | awk '{print $3}')
 
 # 计算load average百分比
 load_1min_percentage=$(echo "scale=2; $load_1min / $cpu_cores * 100" | bc)
 load_5min_percentage=$(echo "scale=2; $load_5min / $cpu_cores * 100" | bc)
 load_15min_percentage=$(echo "scale=2; $load_15min / $cpu_cores * 100" | bc)
 
+calculate_percentage() {
+    local load_value=$1
+    local percentage=$(echo "scale=2; $load_value / $cpu_cores * 100" | bc)
+
+    # 小于0.01的情况显示为具体值，否则显示两位小数
+    if (( $(echo "$percentage < 0.01" | bc -l) )); then
+        echo "$percentage"
+    else
+        echo "$(printf "%.2f" $percentage)"
+    fi
+}
+
 # 打印结果
 echo "CPU Cores: $cpu_cores"
-echo "Load Average (1min): $load_1min, Load Percentage: $load_1min_percentage%"
-echo "Load Average (5min): $load_5min, Load Percentage: $load_5min_percentage%"
-echo "Load Average (15min): $load_15min, Load Percentage: $load_15min_percentage%"
+echo "Load Average (1min): $load_1min, Load Percentage: $(calculate_percentage $load_1min)%"
+echo "Load Average (5min): $load_5min, Load Percentage: $(calculate_percentage $load_5min)%"
+echo "Load Average (15min): $load_15min, Load Percentage: $(calculate_percentage $load_15min)%"
