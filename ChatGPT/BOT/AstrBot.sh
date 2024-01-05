@@ -2,8 +2,6 @@
 
 CONTAINER_NAME="AstrBot"
 IMAGE_NAME="soulter/astrbot:latest"
-DATA_VOLUME="/data/pandora-next/deploy/data"
-PANDORA_NEXT_DOMAIN="http://10.0.12.16:8181"
 
 echo "请选择操作:"
 echo "1) 重启"
