@@ -1,4 +1,14 @@
 #!/usr/bin/env bash
+#===============================================================================
+#
+#          FILE: AstrBot.sh
+#
+#         USAGE: ./AstrBot.sh
+#
+#   DESCRIPTION: AstrBot项目部署、升级脚本；项目地址:https://github.com/Soulter/AstrBot
+#
+#  ORGANIZATION: DingQz dqzboy.com
+#===============================================================================
 
 CONTAINER_NAME="AstrBot"
 IMAGE_NAME="soulter/astrbot:latest"
