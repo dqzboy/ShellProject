@@ -24,6 +24,13 @@ response=$(curl -s "http://127.0.0.1:8181/${proxy_api_prefix}/api/auth/login" \
 # 删除换行符
 response=$(echo "$response" | tr -d '\n')
 
+# 检查是否成功获取access_token
+if [ "$(echo "$response" | jq -r '.access_token')" == "null" ]; then
+    # 打印错误信息，并退出脚本
+    echo -e "\e[31mError: Failed to retrieve access token.\e[0m"
+    exit 1
+fi
+
 # 使用jq提取access_token
 access_token=$(echo "$response" | jq -r '.access_token')
 
