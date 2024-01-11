@@ -10,10 +10,65 @@
 #  ORGANIZATION: DingQz dqzboy.com
 #===============================================================================
 
-# 全局变量定义
+# 全局变量定义；你需要根据你的实际情况修改此处对应的值即可（只需要修改这里）
 proxy_api_prefix="<your_proxy_api_prefix>"
 user_email="<your_user_email>"
 passwd="<your_passwd>"
+
+
+# 函数定义：检查工具是否已安装
+check_tool_installed() {
+    command -v "$1" &> /dev/null
+}
+
+# 函数定义：安装工具
+install_tool() {
+    local package_manager="$1"
+    local tool_name="$2"
+
+    case "$package_manager" in
+        "dnf")
+            sudo dnf install -y "$tool_name"
+            ;;
+        "yum")
+            sudo yum install -y "$tool_name"
+            ;;
+        "apt-get")
+            sudo apt-get install -y "$tool_name"
+            ;;
+        *)
+            echo -e "\e[31mError: Unsupported package manager. Please install '$tool_name' manually.\e[0m"
+            exit 1
+            ;;
+    esac
+}
+
+# 检查服务器的包管理器
+if command -v dnf &> /dev/null; then
+    package_manager="dnf"
+elif command -v yum &> /dev/null; then
+    package_manager="yum"
+elif command -v apt-get &> /dev/null; then
+    package_manager="apt-get"
+else
+    echo -e "\e[31mError: Unsupported package manager. Please install 'curl', 'jq', and 'tr' manually.\e[0m"
+    exit 1
+fi
+
+# 检查并安装curl
+if ! check_tool_installed "curl"; then
+    install_tool "$package_manager" "curl"
+fi
+
+# 检查并安装jq
+if ! check_tool_installed "jq"; then
+    install_tool "$package_manager" "jq"
+fi
+
+# 检查并安装tr
+if ! check_tool_installed "tr"; then
+    install_tool "$package_manager" "coreutils"
+fi
 
 # 执行curl请求并将JSON响应存储在变量中
 response=$(curl -s "http://127.0.0.1:8181/${proxy_api_prefix}/api/auth/login" \
