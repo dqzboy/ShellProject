@@ -10,11 +10,16 @@
 #  ORGANIZATION: DingQz dqzboy.com
 #===============================================================================
 
-# 执行curl请求并将JSON响应存储在变量中,注意修改你的proxy_api_prefix、用户邮箱、密码
-response=$(curl -s 'http://127.0.0.1:8181/<proxy_api_prefix>/api/auth/login' \
+# 全局变量定义
+proxy_api_prefix="<your_proxy_api_prefix>"
+user_email="<your_user_email>"
+passwd="<your_passwd>"
+
+# 执行curl请求并将JSON响应存储在变量中
+response=$(curl -s "http://127.0.0.1:8181/${proxy_api_prefix}/api/auth/login" \
     -H 'Content-Type: application/x-www-form-urlencoded' \
-    -d 'username=<user_email>' \
-    -d 'password=<passwd>')
+    -d "username=${user_email}" \
+    -d "password=${passwd}")
 
 # 删除换行符
 response=$(echo "$response" | tr -d '\n')
@@ -38,10 +43,10 @@ echo "------------------------------------------------------------"
 # 询问用户是否获取Share Token
 read -p "是否获取Share Token? (y/n): " get_share_token
 
-# 根据用户输入决定是否执行下面的命令,注意修改你的unique_name
+# 根据用户输入决定是否执行下面的命令
 if [ "$get_share_token" == "y" ]; then
     # 执行获取Share Token的命令，替换 ${access_token} 为实际的access_token
-    share_token_response=$(curl -s 'http://127.0.0.1:8181/<proxy_api_prefix>/api/token/register' \
+    share_token_response=$(curl -s "http://127.0.0.1:8181/${proxy_api_prefix}/api/token/register" \
         -H 'Content-Type: application/x-www-form-urlencoded' \
         -d 'unique_name=Pandora' \
         -d "access_token=${access_token}" \
