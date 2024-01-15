@@ -14,6 +14,8 @@ CONTAINER_NAME="PandoraNext-Helper"
 IMAGE_NAME="q11391/pandora-next-helper"
 DATA_VOLUME="<pandora-next项目中config.json所在的目录路径>"
 PANDORA_NEXT_DOMAIN="http://<你的pandora-next地址>:8181"
+CONTAINER_PORT="8182"  # 容器内部端口
+HOST_PORT="8182"       # 映射到主机的端口
 
 echo "请选择操作:"
 echo "1) 重启"
@@ -32,7 +34,7 @@ case $user_choice in
         docker rm ${CONTAINER_NAME}
         docker pull ${IMAGE_NAME}
         docker run -d --restart=always --name ${CONTAINER_NAME} --net=bridge \
-            -p 8182:8182 \
+            -p ${HOST_PORT}:${CONTAINER_PORT} \
             -v ${DATA_VOLUME}:/data \
             -e PANDORA_NEXT_DOMAIN=${PANDORA_NEXT_DOMAIN} \
             ${IMAGE_NAME}
@@ -55,7 +57,7 @@ case $user_choice in
         docker pull ${IMAGE_NAME}
         # 创建并运行容器
         docker run -d --restart=always --name ${CONTAINER_NAME} --net=bridge \
-            -p 8182:8182 \
+            -p ${HOST_PORT}:${CONTAINER_PORT} \
             -v ${DATA_VOLUME}:/data \
             -e PANDORA_NEXT_DOMAIN=${PANDORA_NEXT_DOMAIN} \
             ${IMAGE_NAME}
