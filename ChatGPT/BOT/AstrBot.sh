@@ -12,6 +12,8 @@
 
 CONTAINER_NAME="AstrBot"
 IMAGE_NAME="soulter/astrbot:latest"
+CONTAINER_PORT="6185"  # 容器内部端口
+HOST_PORT="6185"       # 映射到主机的端口
 
 echo "请选择操作:"
 echo "1) 重启"
@@ -30,7 +32,7 @@ case $user_choice in
         docker rm ${CONTAINER_NAME}
         docker pull ${IMAGE_NAME}
         docker run -itd --name ${CONTAINER_NAME} \
-            -p 6185:6185 \
+            -p ${HOST_PORT}:${CONTAINER_PORT} \
             ${IMAGE_NAME}
         ;;
     3) # 新装
@@ -51,7 +53,7 @@ case $user_choice in
         docker pull ${IMAGE_NAME}
         # 创建并运行容器
         docker run -itd --name ${CONTAINER_NAME} \
-            -p 6185:6185 \
+            -p ${HOST_PORT}:${CONTAINER_PORT} \
             ${IMAGE_NAME}
         ;;
     4) # 卸载
