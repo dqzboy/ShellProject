@@ -40,7 +40,7 @@ decrypt() {
 # 脚本主体
 while true; do
     echo -e "${PURPLE}=====================${RESET}"
-    echo -e "${PURPLE}=     ${BOLD}菜单选项${RESET}${PURPLE}     =${RESET}"
+    echo -e "${PURPLE}=     ${BOLD}菜单选项${RESET}${PURPLE}      =${RESET}"
     echo -e "${PURPLE}=====================${RESET}"
     echo -e " ${BOLD}1.${RESET} 加密"
     echo -e " ${BOLD}2.${RESET} 解密"
