@@ -17,6 +17,7 @@ PURPLE="\033[35m"
 BOLD="\033[1m"
 CYAN="\033[1;36m"
 RED="\033[1;31m"
+OUTPUT_FILE="output.txt"
 # 加密函数
 encrypt() {
     read -e -p "$(echo -e ${GREEN}请输入要加密的内容: ${RESET})" text_to_encrypt
@@ -24,7 +25,9 @@ encrypt() {
         echo -e "${RED}输入内容不能为空！${RESET}"
         return 1
     fi
-    echo -e "${CYAN}加密结果为: $(echo -n "$text_to_encrypt" | base64)${RESET}"
+    encrypted_text=$(echo -n "$text_to_encrypt" | base64)
+    echo -e "${CYAN}加密结果为: $encrypted_text${RESET}"
+    echo "加密内容：$text_to_encrypt  解密内容: $encrypted_text" >> $OUTPUT_FILE
     return 0
 }
 # 解密函数
@@ -34,13 +37,15 @@ decrypt() {
         echo -e "${RED}输入内容不能为空！${RESET}"
         return 1
     fi
-    echo -e "${CYAN}解密结果为: $(echo -n "$text_to_decrypt" | base64 --decode)${RESET}"
+    decrypted_text=$(echo -n "$text_to_decrypt" | base64 --decode)
+    echo -e "${CYAN}解密结果为: $decrypted_text${RESET}"
+    echo "解密内容：$decrypted_text  加密内容: $text_to_decrypt" >> $OUTPUT_FILE
     return 0
 }
 # 脚本主体
 while true; do
     echo -e "${PURPLE}=====================${RESET}"
-    echo -e "${PURPLE}=     ${BOLD}菜单选项${RESET}${PURPLE}      =${RESET}"
+    echo -e "${PURPLE}=     ${BOLD}菜单选项${RESET}${PURPLE}     =${RESET}"
     echo -e "${PURPLE}=====================${RESET}"
     echo -e " ${BOLD}1.${RESET} 加密"
     echo -e " ${BOLD}2.${RESET} 解密"
