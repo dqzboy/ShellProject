@@ -1,21 +1,28 @@
 #!/usr/bin/env bash
 # WORKING_DIR：指定docker-compose.yml文件所在的目录
-WORKING_DIR="/data/coze-discord-proxy"
+WORKING_DIR="/data/coze-discord-proxy/"
 cd "${WORKING_DIR}"
 CONTAINER_NAME="coze-discord-proxy"
 IMAGE_NAME="deanxv/coze-discord-proxy"
+DOCKER_COMPOSE_FILE="docker-compose.yml"
 stop_and_remove_container() {
     # 检查容器是否存在并停止并移除
     if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
         docker-compose down
     fi
 }
-pull_image() {
-    docker pull "${IMAGE_NAME}"
-}
 remove_none_tags() {
     # 删除特定镜像的所有未标记版本
     docker images | grep "${IMAGE_NAME}" | awk '/<none>/{print $3}' | xargs -r docker rmi
+}
+update_image_version() {
+    # 提示用户输入新的版本号，并更新docker-compose文件
+    read -e -p "请输入更新的版本号并按 Enter 键: " version_number
+    if [[ ! -z "$version_number" ]]; then
+        sed -i "s|${IMAGE_NAME}:.*|${IMAGE_NAME}:$version_number|" $DOCKER_COMPOSE_FILE
+    else
+        echo "输入的版本号为空，未进行更新。"
+    fi
 }
 echo "请选择操作:"
 echo "1) 重启"
@@ -31,14 +38,13 @@ case $user_choice in
     2)
         echo "更新中..."
         stop_and_remove_container
-        pull_image
+        update_image_version
         docker-compose up -d
         remove_none_tags
         ;;
     3)
         echo "新装中..."
         stop_and_remove_container
-        pull_image
         docker-compose up -d
         ;;
     4)
