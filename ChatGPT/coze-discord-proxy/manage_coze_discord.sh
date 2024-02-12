@@ -37,9 +37,9 @@ case $user_choice in
         ;;
     2)
         echo "更新中..."
-        stop_and_remove_container
         update_image_version
-        docker-compose up -d
+        docker compose pull
+        docker compose up -d --force-recreate
         remove_none_tags
         ;;
     3)
