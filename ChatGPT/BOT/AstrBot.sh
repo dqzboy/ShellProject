@@ -10,7 +10,7 @@
 #  ORGANIZATION: DingQz dqzboy.com
 #===============================================================================
 
-CONTAINER_NAME="AstrBot"
+CONTAINER_NAME="astrbot"
 IMAGE_NAME="soulter/astrbot:latest"
 CONTAINER_PORT="6185"  # 容器内部端口
 HOST_PORT="6185"       # 映射到主机的端口
@@ -33,6 +33,7 @@ case $user_choice in
         docker pull ${IMAGE_NAME}
         docker run -itd --name ${CONTAINER_NAME} \
             -p ${HOST_PORT}:${CONTAINER_PORT} \
+	    --restart=on-failure \
             ${IMAGE_NAME}
         ;;
     3) # 新装
