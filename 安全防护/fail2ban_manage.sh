@@ -38,8 +38,7 @@ function show_jail_status {
         echo "$((i+1))) ${jails_array[$i]}"
     done
 
-    echo -e -n "${GREEN}请选择一个 jail (输入编号): ${NC}"
-    read -e selection
+    read -e -p "$(echo -e ${GREEN}"请选择一个 jail (输入编号): "${NC})" selection
 
     # 验证输入是否为数字且在范围内
     if ! [[ $selection =~ ^[0-9]+$ ]] || [ $selection -lt 1 ] || [ $selection -gt ${#jails_array[@]} ]; then
@@ -51,13 +50,8 @@ function show_jail_status {
     sudo fail2ban-client status "$jail"
 }
 
-#!/bin/bash
-
-# 其他函数保持不变...
-
 # 函数：解除特定 jail 中一个或多个 IP 的封禁
 function unban_ip {
-    # 获取当前激活的 jails 列表
     local jails_list=$(sudo fail2ban-client status | grep "Jail list:" | cut -d':' -f2 | tr -d '[:space:]')
     local jails_array=(${jails_list//,/ })
 
@@ -71,19 +65,16 @@ function unban_ip {
         echo "$((i+1))) ${jails_array[$i]}"
     done
 
-    echo -e -n "${GREEN}请选择一个 jail (输入编号): ${NC}"
-    read -e selection
+    read -e -p "$(echo -e ${GREEN}"请选择一个 jail (输入编号): "${NC})" selection
 
-    # 验证输入是否为数字且在范围内
     if ! [[ $selection =~ ^[0-9]+$ ]] || [ $selection -lt 1 ] || [ $selection -gt ${#jails_array[@]} ]; then
         echo -e "${RED}无效的选择，返回主菜单。${NC}"
         return
     fi
 
     local jail=${jails_array[$((selection-1))]}
-
-    echo -e "${GREEN}输入要解封的IP地址，如果有多个请用空格分隔:${NC}"
-    read -a ips
+    
+    read -e -p "$(echo -e ${GREEN}"输入要解封的IP地址，如果有多个请用空格分隔: "${NC})" -a ips
     if [[ ${#ips[@]} -eq 0 ]]; then
         echo -e "${RED}至少需要输入一个IP地址。${NC}"
         return
@@ -113,8 +104,7 @@ function show_menu {
 while true; do
     show_menu
     while true; do
-        echo -e -n "${GREEN}请选择操作（1-4）: ${NC}"
-        read -e choice
+        read -e -p "$(echo -e ${GREEN}"请选择操作（1-4）: "${NC})" choice
         if [[ -z "$choice" ]]; then
             echo -e "${RED}选择不能为空，请重新输入。${NC}"
         elif [[ ! $choice =~ ^[1-4]$ ]]; then
@@ -140,8 +130,7 @@ while true; do
     esac
     # 在执行完一个有效的选项后询问用户是否继续
     while true; do
-        echo -e -n "${GREEN}是否继续其他操作？(y/n): ${NC}"
-        read -e cont
+        read -e -p "$(echo -e ${GREEN}"是否继续其他操作？(y/n): "${NC})" cont
         case $cont in
             [Yy]* ) break;;
             [Nn]* ) exit;;
