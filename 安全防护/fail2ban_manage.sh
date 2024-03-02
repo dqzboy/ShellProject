@@ -51,14 +51,36 @@ function show_jail_status {
     sudo fail2ban-client status "$jail"
 }
 
+#!/bin/bash
+
+# 其他函数保持不变...
+
 # 函数：解除特定 jail 中一个或多个 IP 的封禁
 function unban_ip {
-    echo -e -n "${GREEN}请输入jail名称: ${NC}"
-    read -e jail
-    if [[ -z "$jail" ]]; then
-        echo -e "${RED}jail名称不能为空。${NC}"
+    # 获取当前激活的 jails 列表
+    local jails_list=$(sudo fail2ban-client status | grep "Jail list:" | cut -d':' -f2 | tr -d '[:space:]')
+    local jails_array=(${jails_list//,/ })
+
+    if [ ${#jails_array[@]} -eq 0 ]; then
+        echo -e "${RED}没有找到激活的 jails。${NC}"
         return
     fi
+
+    echo -e "${GREEN}当前激活的 jails:${NC}"
+    for i in "${!jails_array[@]}"; do
+        echo "$((i+1))) ${jails_array[$i]}"
+    done
+
+    echo -e -n "${GREEN}请选择一个 jail (输入编号): ${NC}"
+    read -e selection
+
+    # 验证输入是否为数字且在范围内
+    if ! [[ $selection =~ ^[0-9]+$ ]] || [ $selection -lt 1 ] || [ $selection -gt ${#jails_array[@]} ]; then
+        echo -e "${RED}无效的选择，返回主菜单。${NC}"
+        return
+    fi
+
+    local jail=${jails_array[$((selection-1))]}
 
     echo -e "${GREEN}输入要解封的IP地址，如果有多个请用空格分隔:${NC}"
     read -a ips
