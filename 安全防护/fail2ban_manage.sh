@@ -1,4 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#===============================================================================
+#
+#          FILE: fail2ban_manage.sh
+# 
+#         USAGE: ./fail2ban_manage.sh
+# 
+#   DESCRIPTION: fail2ban客户端管理工具
+# 
+#  ORGANIZATION: dqzboy.com Ding Qinzheng
+#       CREATED: 2023
+#===============================================================================
 
 # 定义颜色
 RED='\033[0;31m'
