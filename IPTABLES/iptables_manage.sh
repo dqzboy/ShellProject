@@ -5,7 +5,7 @@
 # 
 #         USAGE: ./iptables_manage.sh
 # 
-#   DESCRIPTION: 基于IPTABLES实现交互插入\删除INPUT链端口规则
+#   DESCRIPTION: 基于IPTABLES实现交互插入\删除INPUT链端口\IP规则
 # 
 #  ORGANIZATION: dqzboy.com
 #       CREATED: 2023
