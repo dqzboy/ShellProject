@@ -6,7 +6,7 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 # 指定app.py文件所在的目录
-APP_DIR="/data/chatgpt-on-wechat/chatgpt-on-wechat-fork"
+APP_DIR="/data/chatgpt-on-wechat"
 APP_FILE="app.py"
 
 # 获取Python应用程序的进程ID (PID)
