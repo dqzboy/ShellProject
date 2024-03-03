@@ -51,6 +51,14 @@ check_status() {
     fi
 }
 
+# 重启Python应用程序
+restart_app() {
+    echo -e "${GREEN}正在重启应用程序...${NC}"
+    stop_app
+    sleep 2  # 等待两秒确保应用程序完全停止
+    start_app
+}
+
 # 显示表格样式的菜单
 function show_menu {
     echo -e "${GREEN}Python 应用管理菜单${NC}"
@@ -60,19 +68,21 @@ function show_menu {
     echo "| 1    | 启动 Python 应用程序              |"
     echo "| 2    | 停止 Python 应用程序              |"
     echo "| 3    | 查看 Python 应用程序的运行状态    |"
-    echo "| 4    | 退出                               |"
+    echo "| 4    | 重启 Python 应用程序              |"
+    echo "| 5    | 退出                               |"
     echo "+-------------------+-----------------------+"
 }
 
 # 主菜单循环
 while true; do
     show_menu
-    read -e -p "$(echo -e ${GREEN}"请选择操作（1-4）: "${NC})" choice
+    read -e -p "$(echo -e ${GREEN}"请选择操作（1-5）: "${NC})" choice
     case "$choice" in
         1) start_app ;;
         2) stop_app ;;
         3) check_status ;;
-        4) exit ;;
-        *) echo -e "${RED}无效选择，请输入1-4之间的数字。${NC}" ;;
+        4) restart_app ;;
+        5) exit ;;
+        *) echo -e "${RED}无效选择，请输入1-5之间的数字。${NC}" ;;
     esac
 done
