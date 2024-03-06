@@ -16,121 +16,125 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
-# 保存 iptables 规则的函数（Debian/Ubuntu）
-function save_rules {
-    sudo iptables-save | sudo tee /etc/sysconfig/iptables
-    echo -e "${GREEN}规则已保存。${NC}"
+# 函数：显示所有 jails
+function show_jails {
+    echo -e "${GREEN}当前激活的 jails:${NC}"
+    sudo fail2ban-client status
 }
 
-# 函数：禁止IP访问
-function block_ip {
-    read -e -p "$(echo -e ${GREEN}"输入要屏蔽的IP地址(多个IP用空格分隔): "${NC})" ip
-    for i in $ip; do
-        if sudo iptables -L INPUT -v -n | grep -q "$i"; then
-            echo -e "${RED}IP $i 已被屏蔽。${NC}"
-        else
-            sudo iptables -I INPUT -s "$i" -j DROP
-            echo -e "${GREEN}IP $i 已被屏蔽。${NC}"
-            save_rules
-        fi
+# 函数：查看特定 jail 中的封禁 IP 列表
+function show_jail_status {
+    # 获取当前激活的 jails 列表
+    local jails_list=$(sudo fail2ban-client status | grep "Jail list:" | cut -d':' -f2 | tr -d '[:space:]')
+    local jails_array=(${jails_list//,/ })
+
+    if [ ${#jails_array[@]} -eq 0 ]; then
+        echo -e "${RED}没有找到激活的 jails。${NC}"
+        return
+    fi
+
+    echo -e "${GREEN}当前激活的 jails:${NC}"
+    for i in "${!jails_array[@]}"; do
+        echo "$((i+1))) ${jails_array[$i]}"
+    done
+
+    read -e -p "$(echo -e ${GREEN}"请选择一个 jail (输入编号): "${NC})" selection
+
+    # 验证输入是否为数字且在范围内
+    if ! [[ $selection =~ ^[0-9]+$ ]] || [ $selection -lt 1 ] || [ $selection -gt ${#jails_array[@]} ]; then
+        echo -e "${RED}无效的选择，返回主菜单。${NC}"
+        return
+    fi
+
+    local jail=${jails_array[$((selection-1))]}
+    sudo fail2ban-client status "$jail"
+}
+
+# 函数：解除特定 jail 中一个或多个 IP 的封禁
+function unban_ip {
+    local jails_list=$(sudo fail2ban-client status | grep "Jail list:" | cut -d':' -f2 | tr -d '[:space:]')
+    local jails_array=(${jails_list//,/ })
+
+    if [ ${#jails_array[@]} -eq 0 ]; then
+        echo -e "${RED}没有找到激活的 jails。${NC}"
+        return
+    fi
+
+    echo -e "${GREEN}当前激活的 jails:${NC}"
+    for i in "${!jails_array[@]}"; do
+        echo "$((i+1))) ${jails_array[$i]}"
+    done
+
+    read -e -p "$(echo -e ${GREEN}"请选择一个 jail (输入编号): "${NC})" selection
+
+    if ! [[ $selection =~ ^[0-9]+$ ]] || [ $selection -lt 1 ] || [ $selection -gt ${#jails_array[@]} ]; then
+        echo -e "${RED}无效的选择，返回主菜单。${NC}"
+        return
+    fi
+
+    local jail=${jails_array[$((selection-1))]}
+    
+    read -e -p "$(echo -e ${GREEN}"输入要解封的IP地址，如果有多个请用空格分隔: "${NC})" -a ips
+    if [[ ${#ips[@]} -eq 0 ]]; then
+        echo -e "${RED}至少需要输入一个IP地址。${NC}"
+        return
+    fi
+
+    for ip in "${ips[@]}"
+    do
+        echo -e "${GREEN}正在解封 $ip 从 $jail...${NC}"
+        sudo fail2ban-client set "$jail" unbanip "$ip"
     done
 }
 
-# 函数：禁止端口访问
-function block_port {
-    read -e -p "$(echo -e ${GREEN}"输入要屏蔽的端口号(多个端口用空格分隔): "${NC})" port
-    for p in $port; do
-        if sudo iptables -L INPUT -v -n | grep -q "dpt:$p .* DROP"; then
-            echo -e "${RED}端口 $p 已被屏蔽。${NC}"
-        else
-            sudo iptables -A INPUT -p tcp --dport "$p" -j DROP
-            echo -e "${GREEN}端口 $p 已被屏蔽。${NC}"
-            save_rules
-        fi
-    done
-}
-
-# 函数：放通IP访问
-function allow_ip {
-    read -e -p "$(echo -e ${GREEN}"输入要放通的IP地址(多个IP用空格分隔): "${NC})" ips
-    for ip in $ips; do
-        if sudo iptables -L INPUT -v -n | grep -q "$ip"; then
-            sudo iptables -D INPUT -s "$ip" -j DROP
-            echo -e "${GREEN}IP $ip 已被放通。${NC}"
-            save_rules
-        else
-            echo -e "${RED}IP $ip 没有被屏蔽，无需放通。${NC}"
-        fi
-    done
-}
-
-# 函数：放通端口访问
-function allow_port {
-    read -e -p "$(echo -e ${GREEN}"输入要放通的端口号(多个端口用空格分隔): "${NC})" ports
-    for port in $ports; do
-        if sudo iptables -L INPUT -v -n | grep -q "dpt:$port .* DROP"; then
-            sudo iptables -D INPUT -p tcp --dport "$port" -j DROP
-            echo -e "${GREEN}端口 $port 已被放通。${NC}"
-            save_rules
-        else
-            echo -e "${RED}端口 $port 没有被屏蔽，无需放通。${NC}"
-        fi
-    done
-}
-
-# 函数：列出所有被禁止的IP
-function list_blocked_ips {
-    echo -e "${GREEN}当前被禁止的IP地址：${NC}"
-    sudo iptables -L INPUT -v -n | grep DROP | grep -v "dpt:" | awk '{print $8}' | uniq
-}
-
-# 函数：列出所有被禁止的端口
-function list_blocked_ports {
-    echo -e "${GREEN}当前被禁止的端口：${NC}"
-    sudo iptables -L INPUT -v -n | grep DROP | grep "dpt:" | awk '{for(i=1;i<=NF;i++) if($i ~ /dpt:/) print $(i+1)}'
-}
-
-# 显示菜单
+# 显示表格样式的菜单
 function show_menu {
-    echo -e "${GREEN}IP和端口管理菜单${NC}"
-    echo "1) 禁止IP访问"
-    echo "2) 禁止端口访问"
-    echo "3) 放通IP访问"
-    echo "4) 放通端口访问"
-    echo "5) 列出所有被禁止的IP"
-    echo "6) 列出所有被禁止的端口"
-    echo "7) 退出"
+    echo -e "${GREEN}Fail2Ban 管理菜单${NC}"
+    echo "+-------------------+-------------------+"
+    echo "| 选项 | 描述                           |"
+    echo "+-------------------+-------------------+"
+    echo "| 1    | 显示所有 jails                 |"
+    echo "| 2    | 查看指定 jail 的信息           |"
+    echo "| 3    | 解除指定 jail 封禁的 IP        |"
+    echo "| 4    | 退出                           |"
+    echo "+-------------------+-------------------+"
 }
 
-# 主循环
+# 主菜单
 while true; do
     show_menu
-    read -e -p "$(echo -e ${GREEN}"请选择操作（1-7）: "${NC})" choice
-
+    while true; do
+        read -e -p "$(echo -e ${GREEN}"请选择操作（1-4）: "${NC})" choice
+        if [[ -z "$choice" ]]; then
+            echo -e "${RED}选择不能为空，请重新输入。${NC}"
+        elif [[ ! $choice =~ ^[1-4]$ ]]; then
+            echo -e "${RED}无效选择，必须为1-4之间的数字，请重新输入。${NC}"
+        else
+            break
+        fi
+    done
+    
     case "$choice" in
         1)
-            block_ip
+            show_jails
             ;;
         2)
-            block_port
+            show_jail_status
             ;;
         3)
-            allow_ip
+            unban_ip
             ;;
         4)
-            allow_port
-            ;;
-        5)
-            list_blocked_ips
-            ;;
-        6)
-            list_blocked_ports
-            ;;
-        7)
             break
             ;;
-        *)
-            echo -e "${RED}无效选择，请输入1-7之间的数字。${NC}"
-            ;;
     esac
+    # 在执行完一个有效的选项后询问用户是否继续
+    while true; do
+        read -e -p "$(echo -e ${GREEN}"是否继续其他操作？(y/n): "${NC})" cont
+        case $cont in
+            [Yy]* ) break;;
+            [Nn]* ) exit;;
+            * ) echo -e "${RED}请输入 y 或 n。${NC}";;
+        esac
+    done
 done
