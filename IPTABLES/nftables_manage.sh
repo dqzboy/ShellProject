@@ -142,29 +142,33 @@ function allow_port {
 
 # 函数：列出所有被禁止的IP
 function list_blocked_ips {
-    # 获取所有表的名称
     local tables
     IFS=$'\n' read -r -d '' -a tables < <(sudo nft list tables | awk '{$1=""; print substr($0,2)}' && printf '\0')
 
-    # 遍历每个表
     for table in "${tables[@]}"; do
         echo -e "${GREEN}检查表: $table ${NC}"
         local sets
         IFS=$'\n' read -r -d '' -a sets < <(sudo nft list table "$table" | grep -oP '(?<=set ).*(?={)' && printf '\0')
 
-        # 检查表下是否有集合
         if [ ${#sets[@]} -eq 0 ]; then
-            echo -e "${RED}>>> 在表$table下没有找到集合${NC}"
+            echo -e "${RED}>>> 在表$table下没有找到集合，直接检查链中的IP ${NC}"
+            local ips
+            ips=$(sudo nft list table "$table" | grep -oP '(\d{1,3}\.){3}\d{1,3}')
+            if [ -z "$ips" ]; then
+                echo -e "${RED}>>> 在表$table中没有找到被禁止的IP地址${NC}"
+            else
+                echo -e "${GREEN}>>> 在表$table中被禁止的IP地址: ${NC}"
+                echo "$ips"
+            fi
         else
-            # 遍历每个集合
             for set in "${sets[@]}"; do
                 if sudo nft list set "$table" "$set" | grep -q 'ipv4_addr'; then
                     local ips
                     ips=$(sudo nft list set "$table" "$set" | grep -oP '(\d{1,3}\.){3}\d{1,3}')
                     if [ -z "$ips" ]; then
-                        echo -e "${RED}>>> 在表$table中集合$set是空的${NC}"
+                        echo -e "${RED}>>> 在表$table中集合$set中没有被禁止的IP${NC}"
                     else
-                        echo -e "${GREEN}>>> 在表$table中被禁止的IP地址集合$set: ${NC}"
+                        echo -e "${GREEN}>>> 在表$table中集合$set中被禁止的IP地址如下: ${NC}"
                         echo "$ips"
                     fi
                 fi
@@ -175,21 +179,25 @@ function list_blocked_ips {
 
 # 函数：列出所有被禁止的端口
 function list_blocked_ports {
-    # 获取所有表的名称
     local tables
     IFS=$'\n' read -r -d '' -a tables < <(sudo nft list tables | awk '{$1=""; print substr($0,2)}' && printf '\0')
 
-    # 遍历每个表
     for table in "${tables[@]}"; do
         echo -e "${GREEN}检查表: $table ${NC}"
         local chains
         IFS=$'\n' read -r -d '' -a chains < <(sudo nft list table "$table" | grep -oP '(?<=chain ).*(?={)' && printf '\0')
 
-        # 检查表下是否有链
         if [ ${#chains[@]} -eq 0 ]; then
-            echo -e "${RED}>>> 在表$table下没有找到链${NC}"
+            echo -e "${RED}>>> 在表$table下没有找到链，直接检查表中的端口 ${NC}"
+            local ports
+            ports=$(sudo nft list table "$table" | grep 'drop' | grep 'dport' | awk '{print $9}')
+            if [ -z "$ports" ]; then
+                echo -e "${RED}>>> 在表$table中没有找到被禁止的端口${NC}"
+            else
+                echo -e "${GREEN}>>> 在表$table中被禁止的端口: ${NC}"
+                echo "$ports" | sort | uniq
+            fi
         else
-            # 遍历每个链
             for chain in "${chains[@]}"; do
                 local blocked_ports
                 IFS=$'\n' read -r -d '' -a blocked_ports < <(sudo nft list chain "$table" "$chain" | grep 'drop' | grep 'dport' | awk '{print $9}' && printf '\0')
