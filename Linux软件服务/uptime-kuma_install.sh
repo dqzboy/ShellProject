@@ -9,46 +9,45 @@
 #
 #  ORGANIZATION: DingQz dqzboy.com
 #===============================================================================
-SETCOLOR_SKYBLUE="echo -en \\E[1;36m"
-SETCOLOR_SUCCESS="echo -en \\E[0;32m"
-SETCOLOR_NORMAL="echo  -en \\E[0;39m"
-SETCOLOR_RED="echo  -en \\E[0;31m"
-SETCOLOR_YELLOW="echo -en \\E[1;33m"
-GREEN="\033[1;32m"
+
+echo
+cat << EOF
+
+    ██╗   ██╗██████╗ ████████╗██╗███╗   ███╗███████╗    ██╗  ██╗██╗   ██╗███╗   ███╗ █████╗ 
+    ██║   ██║██╔══██╗╚══██╔══╝██║████╗ ████║██╔════╝    ██║ ██╔╝██║   ██║████╗ ████║██╔══██╗
+    ██║   ██║██████╔╝   ██║   ██║██╔████╔██║█████╗      █████╔╝ ██║   ██║██╔████╔██║███████║
+    ██║   ██║██╔═══╝    ██║   ██║██║╚██╔╝██║██╔══╝      ██╔═██╗ ██║   ██║██║╚██╔╝██║██╔══██║
+    ╚██████╔╝██║        ██║   ██║██║ ╚═╝ ██║███████╗    ██║  ██╗╚██████╔╝██║ ╚═╝ ██║██║  ██║
+     ╚═════╝ ╚═╝        ╚═╝   ╚═╝╚═╝     ╚═╝╚══════╝    ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝
+
+EOF
+
+
+GREEN="\033[0;32m"
+RED="\033[31m"
+YELLOW="\033[33m"
 RESET="\033[0m"
-PURPLE="\033[35m"
 
-
-SUCCESS() {
-  ${SETCOLOR_SUCCESS} && echo "------------------------------------< $1 >-------------------------------------"  && ${SETCOLOR_NORMAL}
+INFO="[${GREEN}INFO${RESET}]"
+ERROR="[${RED}ERROR${RESET}]"
+WARN="[${YELLOW}WARN${RESET}]"
+function INFO() {
+    echo -e "${INFO} ${1}"
 }
-
-SUCCESS1() {
-  ${SETCOLOR_SUCCESS} && echo "$1"  && ${SETCOLOR_NORMAL}
+function ERROR() {
+    echo -e "${ERROR} ${1}"
 }
-
-ERROR() {
-  ${SETCOLOR_RED} && echo "$1"  && ${SETCOLOR_NORMAL}
-}
-
-INFO() {
-  ${SETCOLOR_SKYBLUE} && echo "------------------------------------ $1 -------------------------------------"  && ${SETCOLOR_NORMAL}
-}
-
-INFO1() {
-  ${SETCOLOR_SKYBLUE} && echo "$1"  && ${SETCOLOR_NORMAL}
-}
-
-WARN() {
-  ${SETCOLOR_YELLOW} && echo "$1"  && ${SETCOLOR_NORMAL}
+function WARN() {
+    echo -e "${WARN} ${1}"
 }
 
 
 function CHECK_OS() {
+INFO "======================= 检查环境 ======================="
 if [ -f /etc/os-release ]; then
     . /etc/os-release
 else
-    echo "无法确定发行版"
+    ERROR "无法确定发行版"
     exit 1
 fi
 
@@ -79,12 +78,10 @@ case "$ID" in
         ;;
 esac
 
-echo "------------------------------------------"
-echo "系统发行版: $NAME"
-echo "系统版本: $VERSION"
-echo "系统ID: $ID"
-echo "系统ID Like: $ID_LIKE"
-echo "------------------------------------------"
+INFO "系统发行版: $NAME"
+INFO "系统版本: $VERSION"
+INFO "系统ID: $ID"
+INFO "系统ID Like: $ID_LIKE"
 }
 
 
@@ -106,11 +103,11 @@ if [ "$repo_type" = "centos" ] || [ "$repo_type" = "rhel" ]; then
             success=true
             break
         fi
-        echo "docker安装失败，正在尝试重新下载 (尝试次数: $attempt)"
+        ERROR "docker安装失败，正在尝试重新下载 (尝试次数: $attempt)"
       done
 
       if $success; then
-         SUCCESS1 ">>> $(docker --version)"
+         INFO "docker 安装版本为：$(docker --version)"
          systemctl restart docker | grep -E "ERROR|ELIFECYCLE|WARN"
          systemctl enable docker &>/dev/null
       else
@@ -118,8 +115,7 @@ if [ "$repo_type" = "centos" ] || [ "$repo_type" = "rhel" ]; then
          exit 1
       fi
     else
-      INFO1 "docker 已安装..."
-      SUCCESS1 ">>> $(docker --version)"
+      INFO "docker 已安装，安装版本为：$(docker --version)"
       systemctl restart docker | grep -E "ERROR|ELIFECYCLE|WARN"
     fi
 elif [ "$repo_type" == "ubuntu" ]; then
@@ -135,11 +131,11 @@ elif [ "$repo_type" == "ubuntu" ]; then
             success=true
             break
         fi
-        echo "docker安装失败，正在尝试重新下载 (尝试次数: $attempt)"
+        ERROR "docker安装失败，正在尝试重新下载 (尝试次数: $attempt)"
       done
 
       if $success; then
-         SUCCESS1 ">>> $(docker --version)"
+         INFO "docker 安装版本为：$(docker --version)"
          systemctl restart docker | grep -E "ERROR|ELIFECYCLE|WARN"
          systemctl enable docker &>/dev/null
       else
@@ -147,8 +143,7 @@ elif [ "$repo_type" == "ubuntu" ]; then
          exit 1
       fi
     else
-      INFO1 "docker 已安装..."
-      SUCCESS1 ">>> $(docker --version)"
+      INFO "docker 已安装，安装版本为：$(docker --version)"
       systemctl restart docker | grep -E "ERROR|ELIFECYCLE|WARN"
     fi
 elif [ "$repo_type" == "debian" ]; then
@@ -165,11 +160,11 @@ elif [ "$repo_type" == "debian" ]; then
             success=true
             break
         fi
-        echo "docker安装失败，正在尝试重新下载 (尝试次数: $attempt)"
+        ERROR "docker安装失败，正在尝试重新下载 (尝试次数: $attempt)"
       done
 
       if $success; then
-         SUCCESS1 ">>> $(docker --version)"
+         INFO "docker 安装版本为：$(docker --version)"
          systemctl restart docker | grep -E "ERROR|ELIFECYCLE|WARN"
          systemctl enable docker &>/dev/null
       else
@@ -177,8 +172,7 @@ elif [ "$repo_type" == "debian" ]; then
          exit 1
       fi
     else
-      INFO1 "docker 已安装..."
-      SUCCESS1 ">>> $(docker --version)"
+      INFO "docker 已安装，安装版本为：$(docker --version)"
       systemctl restart docker | grep -E "ERROR|ELIFECYCLE|WARN"
     fi
 else
@@ -187,22 +181,47 @@ else
 fi
 }
 
+# 安装完成之后打印提示信息
+function PROMPT(){
+INFO
+INFO "=================感谢您的耐心等待，安装已经完成=================="
+# 获取公网IP
+PUBLIC_IP=$(curl -s ip.sb)
+
+# 获取所有网络接口的IP地址
+ALL_IPS=$(hostname -I)
+
+# 排除不需要的地址（127.0.0.1和docker0）
+INTERNAL_IP=$(echo "$ALL_IPS" | awk '$1!="127.0.0.1" && $1!="::1" && $1!="docker0" {print $1}')
+INFO
+INFO "请用浏览器访问面板: "
+INFO "公网访问地址: http://$PUBLIC_IP:${UPTIME_PORT}"
+INFO "内网访问地址: http://$INTERNAL_IP:${UPTIME_PORT}"
+INFO
+INFO "作者博客: https://dqzboy.com"
+INFO  
+INFO "如果使用的是云服务器，请至安全组开放 ${UPTIME_PORT} 端口"
+INFO
+INFO "================================================================"
+}
+
+
 function ADD_UPTIME_KUMA() {
-    SUCCESS "Uptime Kuma"
-    read -e -p "$(echo -e ${GREEN}"是否部署uptime-kuma监控工具？(y/n): "${RESET})" uptime
+    INFO "======================= 开始安装 ======================="
+    read -e -p "$(INFO '是否部署uptime-kuma监控工具？(y/n): ')" uptime
 
     if [[ "$uptime" == "y" ]]; then
         # 检查是否已经运行了 uptime-kuma 容器
         if docker ps -a --format "{{.Names}}" | grep -q "uptime-kuma"; then
             WARN "已经运行了uptime-kuma监控工具。"
-            read -e -p "$(echo -e ${GREEN}"是否停止和删除旧的容器并继续安装？(y/n): "${RESET})" continue_install
+            read -e -p "$(WARN '是否停止和删除旧的容器并继续安装？(y/n): ')" continue_install
 
             if [[ "$continue_install" == "y" ]]; then
                 docker stop uptime-kuma
                 docker rm uptime-kuma
-                INFO1 "已停止和删除旧的uptime-kuma容器。"
+                WARN "已停止和删除旧的uptime-kuma容器。"
             else
-                INFO1 "已取消部署uptime-kuma监控工具。"
+                WARN "已取消部署uptime-kuma监控工具。"
                 exit 0
             fi
         fi
@@ -210,7 +229,7 @@ function ADD_UPTIME_KUMA() {
         MAX_TRIES=3
 
         for ((try=1; try<=${MAX_TRIES}; try++)); do
-            read -e -p "$(echo -e ${GREEN}"请输入监听的端口: "${RESET})" UPTIME_PORT
+            read -e -p "$(INFO '请输入监听的端口: ')" UPTIME_PORT
 
             # 检查端口是否已被占用
             if ss -tulwn | grep -q ":${UPTIME_PORT} "; then
@@ -227,11 +246,11 @@ function ADD_UPTIME_KUMA() {
         done
 
         # 提示用户输入映射的目录
-        read -e -p "$(echo -e ${GREEN}"请输入数据持久化在宿主机上的目录路径: "${RESET})" MAPPING_DIR
+        read -e -p "$(INFO '请输入数据持久化在宿主机上的目录路径: ')" MAPPING_DIR
         # 检查目录是否存在，如果不存在则创建
         if [ ! -d "${MAPPING_DIR}" ]; then
             mkdir -p "${MAPPING_DIR}"
-            INFO1 "目录已创建：${MAPPING_DIR}"
+            INFO "目录已创建：${MAPPING_DIR}"
         fi
 
         # 启动 Docker 容器
@@ -241,14 +260,11 @@ function ADD_UPTIME_KUMA() {
 
         # 判断容器状态并打印提示
         if [[ "$status_uptime" == "true" ]]; then
-            SUCCESS "CHECK"
-            Progress
-            SUCCESS1 ">>>>> Docker containers are up and running."
-            INFO1 "uptime-kuma 安装完成，请使用浏览器访问 IP:${UPTIME_PORT} 进行访问。"
+            INFO ">>>>> Docker containers are up and running <<<<<"
+            # 调用提示信息函数
+            PROMPT
         else
-            SUCCESS "CHECK"
-            Progress
-            ERROR ">>>>> The following containers are not up"
+            ERROR ">>>>> The following containers are not up <<<<<"
             if [[ "$status_uptime" != "true" ]]; then
                 ERROR "uptime-kuma 安装过程中出现问题，请检查日志或手动验证容器状态。"
             fi
