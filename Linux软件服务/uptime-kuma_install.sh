@@ -91,6 +91,9 @@ repo_file="docker-ce.repo"
 # 下载存储库文件
 url="https://download.docker.com/linux/$repo_type"
 
+# 定义最多重试次数
+MAX_ATTEMPTS=3
+
 if [ "$repo_type" = "centos" ] || [ "$repo_type" = "rhel" ]; then
     if ! command -v docker &> /dev/null;then
       while [ $attempt -lt $MAX_ATTEMPTS ]; do
