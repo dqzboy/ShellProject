@@ -93,6 +93,9 @@ url="https://download.docker.com/linux/$repo_type"
 
 # 定义最多重试次数
 MAX_ATTEMPTS=3
+# 初始化 attempt和 success变量为0和 false
+attempt=0
+success=false
 
 if [ "$repo_type" = "centos" ] || [ "$repo_type" = "rhel" ]; then
     if ! command -v docker &> /dev/null;then
