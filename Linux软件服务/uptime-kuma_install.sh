@@ -99,7 +99,7 @@ success=false
 
 if [ "$repo_type" = "centos" ] || [ "$repo_type" = "rhel" ]; then
     if ! command -v docker &> /dev/null;then
-      while [ $attempt -lt $MAX_ATTEMPTS ]; do
+      while [[ $attempt -lt $MAX_ATTEMPTS ]]; do
         attempt=$((attempt + 1))
         ERROR "docker 未安装，正在进行安装..."
         yum-config-manager --add-repo $url/$repo_file &>/dev/null
@@ -126,7 +126,7 @@ if [ "$repo_type" = "centos" ] || [ "$repo_type" = "rhel" ]; then
     fi
 elif [ "$repo_type" == "ubuntu" ]; then
     if ! command -v docker &> /dev/null;then
-      while [ $attempt -lt $MAX_ATTEMPTS ]; do
+      while [[ $attempt -lt $MAX_ATTEMPTS ]]; do
         attempt=$((attempt + 1))
         ERROR "docker 未安装，正在进行安装..."
         curl -fsSL $url/gpg | sudo apt-key add - &>/dev/null
@@ -154,7 +154,7 @@ elif [ "$repo_type" == "ubuntu" ]; then
     fi
 elif [ "$repo_type" == "debian" ]; then
     if ! command -v docker &> /dev/null;then
-      while [ $attempt -lt $MAX_ATTEMPTS ]; do
+      while [[ $attempt -lt $MAX_ATTEMPTS ]]; do
         attempt=$((attempt + 1))
 
         ERROR "docker 未安装，正在进行安装..."
