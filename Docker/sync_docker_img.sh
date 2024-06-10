@@ -147,7 +147,7 @@ EOF
     read -e -p "$(echo -e ${GREEN}"请输入日期（1-31）: "${RESET})" day
     read -e -p "$(echo -e ${GREEN}"请输入月份（1-12）: "${RESET})" month
     read -e -p "$(echo -e ${GREEN}"请输入星期几（0-7，其中0和7都表示星期日）: "${RESET})" weekday
-
+    INFO
     schedule="$minute $hour $day $month $weekday"
     # 提示用户的定时任务执行时间
     INFO "您的定时任务已设置为在 $schedule 时间内执行！"
@@ -176,7 +176,7 @@ fi
 }
 
 function PROMPT(){
-echo
+INFO
 INFO "=================感谢您的耐心等待，同步已经完成=================="
 INFO
 INFO "请用浏览器访问Docker Hub官网: "
