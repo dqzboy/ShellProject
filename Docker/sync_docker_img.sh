@@ -152,6 +152,8 @@ EOF
     read -e -p "$(echo -e ${GREEN}"请输入星期几（0-7，其中0和7都表示星期日）: "${RESET})" weekday
 
     schedule="$minute $hour $day $month $weekday"
+    # 提示用户的定时任务执行时间
+    INFO "您的定时任务已设置为在 $schedule 时间内执行！"
 
     # 获取当前用户的crontab内容
     existing_crontab=$(crontab -l 2>/dev/null)
@@ -167,8 +169,6 @@ EOF
         (crontab -l ; echo "$new_cron") | crontab -
         INFO "已成功添加定时任务！"
     fi
-    # 提示用户的定时任务执行时间
-    INFO "您的定时任务已设置为在 $schedule 时间内执行！"
 elif [[ "$cron" == "n" ]]; then
     # 取消定时任务
     WARN "已取消定时更新镜像任务！"
