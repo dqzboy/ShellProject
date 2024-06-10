@@ -127,13 +127,10 @@ LATEST_VERSION=$(curl -s --max-time 60 "https://registry.hub.docker.com/v2/repos
 if [[ -n $CURRENT_VERSION && -n $LATEST_VERSION ]]; then
   if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
     echo "docker-registry-ui 镜像已更新，进行镜像同步操作..."
-
-    #docker buildx create --use
-    #docker buildx imagetools create -t "$DEST_REPO:$DEST_TAG" "$SRC_REPO:$SRC_TAG"
-
-    #docker buildx imagetools inspect "$DEST_REPO:$DEST_TAG"
-
-    #docker rmi $(docker images -q --filter "dangling=true" --filter "reference=$SRC_REPO") &>/dev/null
+    docker buildx create --use
+    docker buildx imagetools create -t "$DEST_REPO:$DEST_TAG" "$SRC_REPO:$SRC_TAG"
+    docker buildx imagetools inspect "$DEST_REPO:$DEST_TAG"
+    docker rmi $(docker images -q --filter "dangling=true" --filter "reference=$SRC_REPO") &>/dev/null
   else
     echo "docker-registry-ui 镜像无需更新"
   fi
