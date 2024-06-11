@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+!/usr/bin/env bash
 #===============================================================================
 #
 #          FILE: sync_docker_img.sh
@@ -32,9 +32,8 @@ function WARN() {
 function SYNC_IMAGE() {
 # 首先，确保登录到Docker Hub
 INFO "登录到Docker Hub..."
-# 输入docker登入的账号密码
-export DOCKER_USERNAME="your_username"
-export DOCKER_PASSWORD="your_password"
+export DOCKER_USERNAME="dqzboy"
+export DOCKER_PASSWORD="dingqz19970323."
 
 #执行docker login
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
@@ -48,11 +47,11 @@ else
 fi
 
 # 设置源镜像仓库和标签
-SRC_REPO="joxit/docker-registry-ui"
-SRC_TAG="main"
+SRC_REPO="IMAGES-A"
+SRC_TAG="latest"
 
 # 设置目标镜像仓库和标签
-DEST_REPO="dqzboy/docker-registry-ui"
+DEST_REPO="IMAGES-B"
 DEST_TAG="latest"
 
 # 定义需要拉取的平台列表
@@ -64,7 +63,7 @@ LATEST_VERSION=$(curl -s --max-time 60 "https://registry.hub.docker.com/v2/repos
 
 if [[ -n $CURRENT_VERSION && -n $LATEST_VERSION ]]; then
   if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
-    INFO "docker-registry-ui 镜像已更新，进行镜像同步操作..."
+    INFO "镜像已更新，进行镜像同步操作..."
     # 拉取源镜像仓库所有平台的镜像并创建多平台镜像
     INFO "拉取源镜像并创建多平台镜像..."
     docker buildx create --use
@@ -78,6 +77,23 @@ if [[ -n $CURRENT_VERSION && -n $LATEST_VERSION ]]; then
     docker rmi $(docker images -q --filter "dangling=true" --filter "reference=$SRC_REPO") &>/dev/null
   else
     WARN "docker-registry-ui 镜像无需更新"
+    read -e -p "$(INFO '是否要强制推送镜像? [y/n]: ')" force_push
+    if [[ "$force_push" == "y" || "$force_push" == "Y" ]]; then
+      INFO "强制进行镜像同步操作..."
+      # 拉取源镜像仓库所有平台的镜像并创建多平台镜像
+      INFO "拉取源镜像并创建多平台镜像..."
+      docker buildx create --use
+      docker buildx imagetools create -t "$DEST_REPO:$DEST_TAG" "$SRC_REPO:$SRC_TAG"
+
+      # 推送多平台镜像到Docker Hub
+      INFO "推送多平台镜像到Docker Hub..."
+      docker buildx imagetools inspect "$DEST_REPO:$DEST_TAG"
+
+      INFO "所有指定平台的镜像已成功拉取、标记并推送。"
+      docker rmi $(docker images -q --filter "dangling=true" --filter "reference=$SRC_REPO") &>/dev/null
+    else
+      INFO "用户选择不强制推送镜像。"
+    fi
   fi
 else
   ERROR "获取Images ID失败，无法进行同步，请稍后再试！"
@@ -95,9 +111,8 @@ mkdir -p /opt/script/syncimage
 # 定时任务更新镜像脚本顺利执行的前提是本地需要有源镜像的存在
 cat > /opt/script/syncimage/SyncImage.sh << \EOF
 #!/usr/bin/env bash
-# 输入docker登入的账号密码
-export DOCKER_USERNAME="your_username"
-export DOCKER_PASSWORD="your_password"
+export DOCKER_USERNAME="dqzboy"
+export DOCKER_PASSWORD="dingqz19970323."
 
 #执行docker login
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
@@ -111,11 +126,11 @@ else
 fi
 
 # 设置源镜像仓库和标签
-SRC_REPO="joxit/docker-registry-ui"
-SRC_TAG="main"
+SRC_REPO="IMAGES-A"
+SRC_TAG="latest"
 
 # 设置目标镜像仓库和标签
-DEST_REPO="dqzboy/docker-registry-ui"
+DEST_REPO="IMAGES-B"
 DEST_TAG="latest"
 
 # 定义需要拉取的平台列表
@@ -126,7 +141,7 @@ LATEST_VERSION=$(curl -s --max-time 60 "https://registry.hub.docker.com/v2/repos
 
 if [[ -n $CURRENT_VERSION && -n $LATEST_VERSION ]]; then
   if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
-    echo "docker-registry-ui 镜像已更新，进行镜像同步操作..."
+    echo "镜像已更新，进行镜像同步操作..."
     docker buildx create --use
     docker buildx imagetools create -t "$DEST_REPO:$DEST_TAG" "$SRC_REPO:$SRC_TAG"
     docker buildx imagetools inspect "$DEST_REPO:$DEST_TAG"
