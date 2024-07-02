@@ -70,12 +70,13 @@ function EMERGENCY() {
 }
 
 # 打印提示信息
-INFO "${BOLD}${RED}错误:${RESET} ${YELLOW}TLS握手超时${RESET} ${BLUE}(请检查网络连接)${RESET}"
-WARN "${BOLD}${GREEN}提示:${RESET} ${CYAN}尝试重启网络设备${RESET} ${MAGENTA}(可能解决问题)${RESET}"
-ERROR "${BOLD}${MAGENTA}注意:${RESET} ${UNDERLINE}确保Docker版本兼容${RESET}"
-DEBUG "${BOLD}${MAGENTA}调试:${RESET} ${UNDERLINE}正在检查网络配置${RESET}"
-SUCCESS "${BOLD}${GREEN}成功:${RESET} ${CYAN}网络连接已恢复${RESET}"
-CRITICAL "${BOLD}${LIGHT_RED}严重:${RESET} ${LIGHT_YELLOW}系统资源不足${RESET} ${LIGHT_BLUE}(请立即采取措施)${RESET}"
-NOTICE "${BOLD}${LIGHT_GREEN}通知:${RESET} ${LIGHT_CYAN}即将进行系统维护${RESET} ${LIGHT_MAGENTA}(请提前保存工作)${RESET}"
-ALERT "${BOLD}${MAGENTA}警报:${RESET} ${WHITE}检测到可疑活动${RESET} ${BLACK}(请检查日志)${RESET}"
-EMERGENCY "${BOLD}${RED}${BLINK}紧急:${RESET} ${LIGHT_RED}系统崩溃${RESET} ${LIGHT_YELLOW}(请联系技术支持)${RESET}"
+# 打印提示信息
+INFO "${BOLD}${RED}错误:${RESET} ${YELLOW}这是黄色，变量为YELLOW${RESET} ${BLUE}这是蓝色，变量为BLUE${RESET}"  # 打印颜色: 绿色
+WARN "${BOLD}${GREEN}提示:${RESET} ${CYAN}这是青色，变量为CYAN${RESET} ${MAGENTA}这是紫色，变量为MAGENTA${RESET}"  # 打印颜色: 黄色
+ERROR "${BOLD}${MAGENTA}注意:${RESET} ${UNDERLINE}这是下划线，变量为UNDERLINE${RESET}"  # 打印颜色: 红色
+DEBUG "${BOLD}${MAGENTA}调试:${RESET} ${UNDERLINE}这是下划线，变量为UNDERLINE${RESET}"  # 打印颜色: 蓝色
+SUCCESS "${BOLD}${GREEN}成功:${RESET} ${CYAN}这是青色，变量为CYAN${RESET}"  # 打印颜色: 青色
+CRITICAL "${BOLD}${LIGHT_RED}严重:${RESET} ${LIGHT_YELLOW}这是浅黄色，变量为LIGHT_YELLOW${RESET} ${LIGHT_BLUE}这是浅蓝色，变量为LIGHT_BLUE${RESET}"  # 打印颜色: 浅红色
+NOTICE "${BOLD}${LIGHT_GREEN}通知:${RESET} ${LIGHT_CYAN}这是浅青色，变量为LIGHT_CYAN${RESET} ${LIGHT_MAGENTA}这是浅紫色，变量为LIGHT_MAGENTA${RESET}"  # 打印颜色: 浅绿色
+ALERT "${BOLD}${MAGENTA}警报:${RESET} ${WHITE}这是白色，变量为WHITE${RESET} ${BLACK}这是黑色，变量为BLACK${RESET}"  # 打印颜色: 紫色
+EMERGENCY "${BOLD}${RED}${BLINK}紧急:${RESET} ${LIGHT_RED}这是浅红色，变量为LIGHT_RED${RESET} ${LIGHT_YELLOW}这是浅黄色，变量为LIGHT_YELLOW${RESET}"  # 打印颜色: 红色（闪烁）
