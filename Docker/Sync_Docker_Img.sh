@@ -47,7 +47,7 @@ else
 fi
 
 # 设置源镜像仓库和标签
-SRC_REPO="nginx"
+SRC_REPO="library/nginx"
 SRC_TAG="latest"
 
 # 设置目标镜像仓库和标签
