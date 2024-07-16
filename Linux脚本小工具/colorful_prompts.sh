@@ -1,25 +1,42 @@
 #!/bin/bash
 
 # 定义颜色和格式
-GREEN="\033[0;32m"
-RED="\033[31m"
-YELLOW="\033[33m"
-RESET="\033[0m"
-BLUE="\033[0;34m"
-MAGENTA="\033[0;35m"
-CYAN="\033[0;36m"
-WHITE="\033[1;37m"
-BLACK="\033[0;30m"
-LIGHT_GREEN="\033[1;32m"
-LIGHT_RED="\033[1;31m"
-LIGHT_YELLOW="\033[1;33m"
-LIGHT_BLUE="\033[1;34m"
-LIGHT_MAGENTA="\033[1;35m"
-LIGHT_CYAN="\033[1;36m"
-BOLD="\033[1m"
-UNDERLINE="\033[4m"
-BLINK="\033[5m"
-REVERSE="\033[7m"
+GREEN="\033[0;32m"          # 绿色
+RED="\033[31m"             # 红色
+YELLOW="\033[33m"          # 黄色
+RESET="\033[0m"            # 重置颜色
+BLUE="\033[0;34m"          # 蓝色
+MAGENTA="\033[0;35m"       # 洋红
+CYAN="\033[0;36m"          # 青色
+WHITE="\033[1;37m"         # 白色
+BLACK="\033[0;30m"         # 黑色
+LIGHT_GREEN="\033[1;32m"   # 浅绿色
+LIGHT_RED="\033[1;31m"     # 浅红色
+LIGHT_YELLOW="\033[1;33m"  # 浅黄色
+LIGHT_BLUE="\033[1;34m"    # 浅蓝色
+LIGHT_MAGENTA="\033[1;35m" # 浅洋红
+LIGHT_CYAN="\033[1;36m"    # 浅青色
+BOLD="\033[1m"             # 加粗
+UNDERLINE="\033[4m"        # 下划线
+BLINK="\033[5m"            # 闪烁
+REVERSE="\033[7m"          # 反转
+
+# Additional colors
+DARK_GRAY="\033[1;30m"     # 深灰色
+LIGHT_GRAY="\033[0;37m"    # 浅灰色
+ORANGE="\033[0;91m"        # 橙色
+LIGHT_ORANGE="\033[1;91m"  # 浅橙色
+PINK="\033[0;95m"          # 粉色
+LIGHT_PINK="\033[1;95m"    # 浅粉色
+BRIGHT_RED="\033[91m"      # 亮红色
+BRIGHT_GREEN="\033[92m"    # 亮绿色
+BRIGHT_YELLOW="\033[93m"   # 亮黄色
+BRIGHT_BLUE="\033[94m"     # 亮蓝色
+BRIGHT_MAGENTA="\033[95m"  # 亮洋红
+BRIGHT_CYAN="\033[96m"     # 亮青色
+BRIGHT_WHITE="\033[97m"    # 亮白色
+DIM="\033[2m"              # 暗色
+ITALIC="\033[3m"           # 斜体
 
 # 定义消息类型
 INFO="[${GREEN}INFO${RESET}]"
@@ -111,6 +128,41 @@ function TITLE() {
 function SEPARATOR() {
     echo -e "${INFO}${BOLD}${LIGHT_BLUE}========================${1}========================${RESET}"
 }
+
+
+echo -e "${GREEN}GREEN: 绿色${RESET}"
+echo -e "${RED}RED: 红色${RESET}"
+echo -e "${YELLOW}YELLOW: 黄色${RESET}"
+echo -e "${BLUE}BLUE: 蓝色${RESET}"
+echo -e "${MAGENTA}MAGENTA: 洋红${RESET}"
+echo -e "${CYAN}CYAN: 青色${RESET}"
+echo -e "${WHITE}WHITE: 白色${RESET}"
+echo -e "${BLACK}BLACK: 黑色${RESET}"
+echo -e "${LIGHT_GREEN}LIGHT_GREEN: 浅绿色${RESET}"
+echo -e "${LIGHT_RED}LIGHT_RED: 浅红色${RESET}"
+echo -e "${LIGHT_YELLOW}LIGHT_YELLOW: 浅黄色${RESET}"
+echo -e "${LIGHT_BLUE}LIGHT_BLUE: 浅蓝色${RESET}"
+echo -e "${LIGHT_MAGENTA}LIGHT_MAGENTA: 浅洋红${RESET}"
+echo -e "${LIGHT_CYAN}LIGHT_CYAN: 浅青色${RESET}"
+echo -e "${BOLD}BOLD: 加粗${RESET}"
+echo -e "${UNDERLINE}UNDERLINE: 下划线${RESET}"
+echo -e "${BLINK}BLINK: 闪烁${RESET}"
+echo -e "${REVERSE}REVERSE: 反转${RESET}"
+echo -e "${DARK_GRAY}DARK_GRAY: 深灰色${RESET}"
+echo -e "${LIGHT_GRAY}LIGHT_GRAY: 浅灰色${RESET}"
+echo -e "${ORANGE}ORANGE: 橙色${RESET}"
+echo -e "${LIGHT_ORANGE}LIGHT_ORANGE: 浅橙色${RESET}"
+echo -e "${PINK}PINK: 粉色${RESET}"
+echo -e "${LIGHT_PINK}LIGHT_PINK: 浅粉色${RESET}"
+echo -e "${BRIGHT_RED}BRIGHT_RED: 亮红色${RESET}"
+echo -e "${BRIGHT_GREEN}BRIGHT_GREEN: 亮绿色${RESET}"
+echo -e "${BRIGHT_YELLOW}BRIGHT_YELLOW: 亮黄色${RESET}"
+echo -e "${BRIGHT_BLUE}BRIGHT_BLUE: 亮蓝色${RESET}"
+echo -e "${BRIGHT_MAGENTA}BRIGHT_MAGENTA: 亮洋红${RESET}"
+echo -e "${BRIGHT_CYAN}BRIGHT_CYAN: 亮青色${RESET}"
+echo -e "${BRIGHT_WHITE}BRIGHT_WHITE: 亮白色${RESET}"
+echo -e "${DIM}DIM: 暗色${RESET}"
+echo -e "${ITALIC}ITALIC: 斜体${RESET}"
 
 # 示例：打印提示信息
 SEPARATOR "开始"
