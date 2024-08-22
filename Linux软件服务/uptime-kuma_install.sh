@@ -62,7 +62,7 @@ function SEPARATOR() {
 
 save_path="/data/uptime"
 mkdir -p $save_path && cd /data/uptime
-url="https://raw.githubusercontent.com/louislam/uptime-kuma/master/compose.yaml"
+compose_url="https://raw.githubusercontent.com/louislam/uptime-kuma/master/compose.yaml"
 
 function CHECK_OS() {
 SEPARATOR "检查环境"
@@ -254,7 +254,7 @@ fi
 function INSTALL_DOCKER() {
 SEPARATOR "安装Docker"
 repo_file="docker-ce.repo"
-url="https://download.docker.com/linux/$repo_type"
+docker_url="https://download.docker.com/linux/$repo_type"
 MAX_ATTEMPTS=3
 attempt=0
 success=false
@@ -264,7 +264,7 @@ if [ "$repo_type" = "centos" ] || [ "$repo_type" = "rhel" ]; then
       while [[ $attempt -lt $MAX_ATTEMPTS ]]; do
         attempt=$((attempt + 1))
         WARN "Docker 未安装，正在进行安装..."
-        yum-config-manager --add-repo $url/$repo_file &>/dev/null
+        yum-config-manager --add-repo $docker_url/$repo_file &>/dev/null
         $package_manager -y install docker-ce &>/dev/null
         if [ $? -eq 0 ]; then
             success=true
@@ -291,8 +291,8 @@ elif [ "$repo_type" == "ubuntu" ]; then
       while [[ $attempt -lt $MAX_ATTEMPTS ]]; do
         attempt=$((attempt + 1))
         WARN "Docker 未安装，正在进行安装..."
-        curl -fsSL $url/gpg | sudo apt-key add - &>/dev/null
-        add-apt-repository "deb [arch=amd64] $url $(lsb_release -cs) stable" <<< $'\n' &>/dev/null
+        curl -fsSL $docker_url/gpg | sudo apt-key add - &>/dev/null
+        add-apt-repository "deb [arch=amd64] $docker_url $(lsb_release -cs) stable" <<< $'\n' &>/dev/null
         $package_manager -y install docker-ce docker-ce-cli containerd.io &>/dev/null
         if [ $? -eq 0 ]; then
             success=true
@@ -320,8 +320,8 @@ elif [ "$repo_type" == "debian" ]; then
         attempt=$((attempt + 1))
 
         WARN "Docker 未安装，正在进行安装..."
-        curl -fsSL $url/gpg | sudo apt-key add - &>/dev/null
-        add-apt-repository "deb [arch=amd64] $url $(lsb_release -cs) stable" <<< $'\n' &>/dev/null
+        curl -fsSL $docker_url/gpg | sudo apt-key add - &>/dev/null
+        add-apt-repository "deb [arch=amd64] $docker_url $(lsb_release -cs) stable" <<< $'\n' &>/dev/null
         $package_manager -y install docker-ce docker-ce-cli containerd.io &>/dev/null
         if [ $? -eq 0 ]; then
             success=true
@@ -354,6 +354,7 @@ fi
 function PROMPT(){
 INFO
 INFO "=================感谢您的耐心等待，安装已经完成=================="
+UPTIME_PORT="3001"
 # 获取公网IP
 PUBLIC_IP=$(curl -s ip.sb)
 
@@ -376,13 +377,13 @@ INFO "================================================================"
 
 function INSTALL_SERVER() {
 SEPARATOR "开始安装"
-wget -O $save_path/docker-compose.yaml "$url" &>/dev/null
+wget -O $save_path/docker-compose.yaml "$compose_url" &>/dev/null
 #启动 Docker容器
 docker compose up -d
 
 
 #检查 uptime-kuma容器状态
-status_uptime=`docker container inspect -f '{{.State.Running}}' uptime-kuma 2>/dev/null`
+status_uptime=`docker container inspect -f '{{.State.Running}}' uptime-uptime-kuma-1 2>/dev/null`
 
 #判断容器状态并打印提示
 if [[ "$status_uptime" == "true" ]]; then
