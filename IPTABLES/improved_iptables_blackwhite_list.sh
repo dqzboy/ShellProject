@@ -12,58 +12,6 @@
 #===============================================================================
 
 
-GREEN="\033[0;32m"
-RED="\033[31m"
-YELLOW="\033[33m"
-RESET="\033[0m"
-BLUE="\033[0;34m"
-MAGENTA="\033[0;35m"
-CYAN="\033[0;36m"
-WHITE="\033[1;37m"
-BLACK="\033[0;30m"
-PINK="\033[0;95m"
-LIGHT_GREEN="\033[1;32m"
-LIGHT_RED="\033[1;31m"
-LIGHT_YELLOW="\033[1;33m"
-LIGHT_BLUE="\033[1;34m"
-LIGHT_MAGENTA="\033[1;35m"
-LIGHT_CYAN="\033[1;36m"
-LIGHT_PINK="\033[1;95m"
-BRIGHT_CYAN="\033[96m"
-BOLD="\033[1m"
-UNDERLINE="\033[4m"
-BLINK="\033[5m"
-REVERSE="\033[7m"
-
-INFO="[${GREEN}INFO${RESET}]"
-ERROR="[${RED}ERROR${RESET}]"
-WARN="[${YELLOW}WARN${RESET}]"
-function INFO() {
-    echo -e "${INFO} ${1}"
-}
-function ERROR() {
-    echo -e "${ERROR} ${1}"
-}
-function WARN() {
-    echo -e "${WARN} ${1}"
-}
-
-function PROMPT_Y_N() {
-    echo -e "[${LIGHT_GREEN}y${RESET}/${LIGHT_BLUE}n${RESET}]: "
-}
-
-PROMPT_YES_NO=$(PROMPT_Y_N)
-
-function SEPARATOR() {
-    echo -e "${INFO}${BOLD}${LIGHT_BLUE}======================== ${1} ========================${RESET}"
-}
-
-# 检查是否以root权限运行
-if [[ $EUID -ne 0 ]]; then
-   echo "此脚本必须以root权限运行" 
-   exit 1
-fi
-
 function IP_BLACKWHITE_LIST() {
     if ! command -v iptables &> /dev/null
     then
@@ -99,7 +47,7 @@ function IP_BLACKWHITE_LIST() {
         local ip=$1
         local ipv4_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
         local ipv6_regex='^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$'
-
+        
         if [[ $ip =~ $ipv4_regex ]] || [[ $ip =~ $ipv6_regex ]]; then
             return 0
         else
@@ -195,7 +143,6 @@ function IP_BLACKWHITE_LIST() {
     ensure_default_deny_for_whitelist() {
         if ! $IPTABLES -C $WHITELIST_CHAIN -j DROP &>/dev/null; then
             $IPTABLES -A $WHITELIST_CHAIN -j DROP
-            INFO "已添加默认拒绝规则到白名单"
         fi
     }
 
@@ -208,7 +155,7 @@ function IP_BLACKWHITE_LIST() {
             WARN "白名单为空，不应用白名单规则以避免锁定系统。"
             return 1
         fi
-
+        
         if ! $IPTABLES -C INPUT -j $WHITELIST_CHAIN &>/dev/null; then
             $IPTABLES -I INPUT 1 -j $WHITELIST_CHAIN
             INFO "已将白名单规则应用到 INPUT 链"
@@ -222,11 +169,7 @@ function IP_BLACKWHITE_LIST() {
 
     switch_to_whitelist() {
         $IPTABLES -D INPUT -j $BLACKLIST_CHAIN 2>/dev/null
-        if apply_whitelist; then
-            INFO "${LIGHT_YELLOW}已切换到白名单模式${RESET}"
-        else
-            WARN "${LIGHT_YELLOW}无法切换到白名单模式，请先添加 IP 到白名单${RESET}"
-        fi
+        INFO "${LIGHT_YELLOW}已切换到白名单模式，请注意：请在添加IP后手动应用规则${RESET}"
     }
 
     switch_to_blacklist() {
@@ -238,17 +181,27 @@ function IP_BLACKWHITE_LIST() {
 
     handle_whitelist() {
         create_chains
-
+        
         local whitelist_mode_active=false
+        local whitelist_rules_applied=false
+
         if $IPTABLES -C INPUT -j $WHITELIST_CHAIN &>/dev/null; then
             whitelist_mode_active=true
+            whitelist_rules_applied=true
         elif $IPTABLES -C INPUT -j $BLACKLIST_CHAIN &>/dev/null; then
             read -e -p "$(WARN "${LIGHT_YELLOW}当前使用黑名单模式${RESET},${LIGHT_CYAN}是否切换到白名单模式？(y/n)${RESET}: ")" switch
             if [[ $switch == "y" ]]; then
-                whitelist_mode_active=false
+                switch_to_whitelist
+                whitelist_mode_active=true
+                whitelist_rules_applied=false
             else
+                WARN "保持在黑名单模式，返回主菜单。"
                 return
             fi
+        else
+            switch_to_whitelist
+            whitelist_mode_active=true
+            whitelist_rules_applied=false
         fi
 
         while true; do
@@ -275,6 +228,7 @@ function IP_BLACKWHITE_LIST() {
                     done
                     if [ ${#valid_ips[@]} -gt 0 ]; then
                         add_ips_to_file "${valid_ips[@]}" "$WHITELIST_FILE"
+                        whitelist_rules_applied=false
                     fi
                     ;;
                 2)
@@ -290,6 +244,7 @@ function IP_BLACKWHITE_LIST() {
                     done
                     if [ ${#valid_ips[@]} -gt 0 ]; then
                         remove_ips_from_file "${valid_ips[@]}" "$WHITELIST_FILE"
+                        whitelist_rules_applied=false
                     fi
                     ;;
                 3)
@@ -297,11 +252,14 @@ function IP_BLACKWHITE_LIST() {
                     ;;
                 4)
                     if apply_whitelist; then
-                        whitelist_mode_active=true
+                        whitelist_rules_applied=true
+                        INFO "${LIGHT_GREEN}白名单规则已成功应用${RESET}"
+                    else
+                        WARN "${LIGHT_YELLOW}无法应用白名单规则${RESET}"
                     fi
                     ;;
                 5)
-                    if ! $whitelist_mode_active; then
+                    if ! $whitelist_rules_applied; then
                         read -e -p "$(WARN "${LIGHT_YELLOW}白名单规则尚未应用。您确定要退出吗？${RESET} (y/n): ")" confirm
                         if [[ $confirm != "y" ]]; then
                             continue
@@ -318,7 +276,7 @@ function IP_BLACKWHITE_LIST() {
 
     handle_blacklist() {
         create_chains
-
+        
         local blacklist_mode_active=false
         if $IPTABLES -C INPUT -j $BLACKLIST_CHAIN &>/dev/null; then
             blacklist_mode_active=true
@@ -328,6 +286,7 @@ function IP_BLACKWHITE_LIST() {
                 switch_to_blacklist
                 blacklist_mode_active=true
             else
+                WARN "保持在白名单模式，返回主菜单。"
                 return
             fi
         else
@@ -390,7 +349,7 @@ function IP_BLACKWHITE_LIST() {
         done
     }
 
-while true; do
+    while true; do
         SEPARATOR "设置IP黑白名单"
         echo -e "1) ${BOLD}管理${LIGHT_GREEN}白名单${RESET}"
         echo -e "2) ${BOLD}管理${LIGHT_CYAN}黑名单${RESET}"
