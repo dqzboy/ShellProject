@@ -44,7 +44,6 @@ ShellProject遵循 [MIT许可证](LICENSE)。
 
 - GitHub Issues：[https://github.com/dqzboy/ShellProject/issues](https://github.com/dqzboy/ShellProject/issues)
 - 交流群：
-  - [Telegram Group](https://t.me/+ghs_XDp1vwxkMGU9)
-  - [WeChat](https://github.com/dqzboy/ChatGPT-Proxy/assets/42825450/09211fb0-70bd-4ac7-bb99-2ead29561142)
+  - [Telegram Group](https://t.me/dqzboyblog)
 
 感谢你使用 ShellProject，我们希望这些脚本能帮助你更高效地管理你的 Linux系统！
