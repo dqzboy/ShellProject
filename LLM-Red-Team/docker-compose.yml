@@ -1,0 +1,98 @@
+services:
+  metaso-free-api:
+    container_name: metaso-free-api
+    image: vinlic/metaso-free-api:latest
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  qwen-free-api:
+    container_name: qwen-free-api
+    image: vinlic/qwen-free-api:latest
+    restart: always
+    ports:
+      - "8001:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  glm-free-api:
+    container_name: glm-free-api
+    image: vinlic/glm-free-api:latest
+    restart: always
+    ports:
+      - "8002:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  step-free-api:
+    container_name: step-free-api
+    image: vinlic/step-free-api:latest
+    restart: always
+    ports:
+      - "8003:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  hailuo-free-api:
+    container_name: hailuo-free-api
+    image: vinlic/hailuo-free-api:latest
+    restart: always
+    ports:
+      - "8004:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  deepseek-free-api:
+    container_name: deepseek-free-api
+    image: vinlic/deepseek-free-api:latest
+    restart: always
+    ports:
+      - "8005:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  kimi-free-api:
+    container_name: kimi-free-api
+    image: vinlic/kimi-free-api:latest
+    restart: always
+    ports:
+      - "8006:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  spark-free-api:
+    container_name: spark-free-api
+    image: vinlic/spark-free-api:latest
+    restart: always
+    ports:
+      - "8007:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  emohaa-free-api:
+    container_name: emohaa-free-api
+    image: vinlic/emohaa-free-api:latest
+    restart: always
+    ports:
+      - "8008:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  doubao-free-api:
+    container_name: doubao-free-api
+    image: vinlic/doubao-free-api:latest
+    restart: always
+    ports:
+      - "8009:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 600 --cleanup
+    restart: always
