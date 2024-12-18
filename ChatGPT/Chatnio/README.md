@@ -4,7 +4,10 @@
 
 1、克隆项目
 ```
-git clone 
+git clone https://github.com/unclegpts/chatnio.git
 ```
 
 2、执行脚本
+```
+
+```
