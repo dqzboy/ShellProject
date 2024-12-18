@@ -8,6 +8,9 @@ git clone https://github.com/unclegpts/chatnio.git
 ```
 
 2、执行脚本
+
+- 执行脚本前记得修改脚本中的`COMPOSE_FILE`变量为实际路径
+
 ```
 # 添加执行权限
 chmod +x manage_chatnio.sh
