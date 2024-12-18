@@ -89,6 +89,15 @@ services:
     environment:
       - TZ=Asia/Shanghai
 
+  jimeng-free-api:
+    container_name: jimeng-free-api
+    image: vinlic/jimeng-free-api:latest
+    restart: always
+    ports:
+      - "8010:8000"
+    environment:
+      - TZ=Asia/Shanghai
+
   watchtower:
     container_name: watchtower
     image: containrrr/watchtower
