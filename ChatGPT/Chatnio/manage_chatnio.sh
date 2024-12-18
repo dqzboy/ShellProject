@@ -1,84 +1,166 @@
-#!/usr/bin/env bash
-# 使用代理
-export proxy="http://127.0.0.1:7890"
-export http_proxy=$proxy
-export https_proxy=$proxy
-export ftp_proxy=$proxy
-export no_proxy="localhost, 127.0.0.1, ::1"
-# WORKING_DIR：指定docker-compose.yml文件所在的目录
-WORKING_DIR="/data/chatnio/"
-cd "${WORKING_DIR}"
-CONTAINER_NAME="chatnio"
-IMAGE_NAME="programzmh/chatnio"
-DOCKER_COMPOSE_FILE="docker-compose.yml"
-stop_and_remove_container() {
-    # 检查容器是否存在并停止并移除
-    if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
-        docker compose down
-	docker compose down --remove-orphans
+#!/bin/bash
+#===============================================================================
+#
+#          FILE: manage_chatnio_docker.sh
+# 
+#         USAGE: ./manage_chatnio_docker.sh
+#
+#   DESCRIPTION: ChatNIO项目Docker容器服务统一管理脚本。支持安装、更新、重启、卸载
+# 
+#===============================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+GRAY='\033[0;37m'
+NC='\033[0m' # 重置颜色
+
+# 定义docker-compose文件路径
+COMPOSE_FILE="/data/chatnio/docker-compose.yaml"
+
+# 清屏函数
+clear_screen() {
+    clear
+}
+
+# 显示标题
+show_header() {
+    echo -e "${BLUE}================================${NC}"
+    echo -e "${CYAN}    ChatNIO Docker 服务管理脚本    ${NC}"
+    echo -e "${BLUE}================================${NC}"
+    echo
+}
+
+# 检查docker-compose文件是否存在
+check_compose_file() {
+    if [ ! -f "$COMPOSE_FILE" ]; then
+        echo -e "${RED}错误: $COMPOSE_FILE 文件不存在${NC}"
+        exit 1
     fi
 }
-remove_none_tags() {
-    # 删除标记为<none>的${IMAGE_NAME}镜像
-    docker images | grep "^${IMAGE_NAME}.*<none>" | awk '{print $3}' | xargs -r docker rmi
-    # 获取 deanxv/coze-discord-proxy 镜像列表，以仓库名和标签的格式显示
-    images=$(docker images ${IMAGE_NAME} --format '{{.Repository}}:{{.Tag}}')
-    # 获取最新的镜像版本
-    latest=$(echo "$images" | sort -V | tail -n 1)
-    # 遍历所有的镜像
-    for image in $images
-    do
-      # 如果镜像不是最新的版本，就删除它
-      if [ "$image" != "$latest" ];then
-        docker rmi $image
-      fi
+
+# 服务操作函数
+service_operation() {
+    local service=$1
+    local operation=$2
+    
+    case $operation in
+        1) # 安装
+            echo -e "${YELLOW}正在安装 $service ...${NC}"
+            docker-compose -f $COMPOSE_FILE up -d $service
+            ;;
+        2) # 更新
+            echo -e "${YELLOW}正在更新 $service ...${NC}"
+            docker-compose -f $COMPOSE_FILE pull $service
+            docker-compose -f $COMPOSE_FILE up -d $service
+            ;;
+        3) # 重启
+            echo -e "${YELLOW}正在重启 $service ...${NC}"
+            docker-compose -f $COMPOSE_FILE restart $service
+            ;;
+        4) # 卸载
+            echo -e "${RED}正在卸载 $service ...${NC}"
+            docker-compose -f $COMPOSE_FILE stop $service
+            docker-compose -f $COMPOSE_FILE rm -f $service
+            ;;
+        *)
+            echo -e "${RED}无效的操作选择${NC}"
+            return 1
+            ;;
+    esac
+
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}操作成功完成！${NC}"
+    else
+        echo -e "${RED}操作失败！${NC}"
+    fi
+}
+
+# 显示操作菜单
+show_operation_menu() {
+    local service=$1
+    while true; do
+        clear_screen
+        show_header
+        echo -e "${CYAN}当前服务: ${PURPLE}$service${NC}"
+        echo -e "${GRAY}请选择要执行的操作:${NC}"
+        echo -e "${GREEN}1) 安装服务${NC}"
+        echo -e "${BLUE}2) 更新服务${NC}"
+        echo -e "${YELLOW}3) 重启服务${NC}"
+        echo -e "${RED}4) 卸载服务${NC}"
+        echo -e "${GRAY}0) 返回主菜单${NC}"
+        
+        read -ep $'\033[36m请输入选项数字: \033[0m' choice
+
+        case $choice in
+            [1-4])
+                service_operation $service $choice
+                read -n 1 -p "按任意键继续..."
+                ;;
+            0)
+                return 0
+                ;;
+            *)
+                echo -e "${RED}无效的选择，请重试${NC}"
+                read -n 1 -p "按任意键继续..."
+                ;;
+        esac
     done
 }
 
-update_image_version() {
-    # 提示用户输入新的版本号，并更新docker-compose文件
-    read -e -p "请输入更新的版本号并按 Enter 键(eg: v3.10.9), 直接回车默认为latest: " version_number
-    if [[ -z "$version_number" ]]; then
-        version_number="latest"
-    fi
-    sed -i "s|${IMAGE_NAME}:.*|${IMAGE_NAME}:$version_number|" $DOCKER_COMPOSE_FILE
+# 主菜单
+main_menu() {
+    while true; do
+        clear_screen
+        show_header
+        echo -e "${GRAY}请选择要管理的服务:${NC}"
+        echo -e "${CYAN}1) ChatNIO 主程序    (端口: 8000)${NC}"
+        echo -e "${CYAN}2) MySQL 数据库      (端口: 3306)${NC}"
+        echo -e "${CYAN}3) Redis 缓存        (端口: 6379)${NC}"
+        echo -e "${RED}0) 退出脚本${NC}"
+        
+        read -ep $'\033[36m请输入选项数字: \033[0m' choice
+        
+        case $choice in
+            1)  show_operation_menu "chatnio" ;;
+            2)  show_operation_menu "mysql" ;;
+            3)  show_operation_menu "redis" ;;
+            0)
+                echo -e "${GREEN}感谢使用，再见！${NC}"
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}无效的选择，请重试${NC}"
+                read -n 1 -p "按任意键继续..."
+                ;;
+        esac
+    done
 }
 
-echo "请选择操作:"
-echo "1) 重启"
-echo "2) 更新"
-echo "3) 新装"
-echo "4) 卸载"
-read -e -p "输入对应数字并按 Enter 键: " user_choice
-case $user_choice in
-    1)
-        echo "--------------------重启中--------------------"
-	docker stop ${CONTAINER_NAME}
-        docker compose restart
-        echo "-------------------- DONE --------------------"
-        ;;
-    2)
-        echo "--------------------更新中--------------------"
-        update_image_version
-        docker compose pull
-        docker compose up -d --force-recreate
-        remove_none_tags
-        echo "-------------------- DONE --------------------"
-        ;;
-    3)
-        echo "--------------------新装中--------------------"
-        stop_and_remove_container
-        docker compose up -d
-        echo "-------------------- DONE --------------------"
-        ;;
-    4)
-        echo "--------------------卸载中--------------------"
-        stop_and_remove_container
-        remove_none_tags
-	docker rmi $(docker images -q ${IMAGE_NAME}) &>/dev/null
-        echo "-------------------- DONE --------------------"
-        ;;
-    *)
-        echo "输入了无效的选择。请重新运行脚本并选择1-4的选项。"
-        ;;
-esac
+# 检查是否为root用户
+if [ "$(id -u)" != "0" ]; then
+    echo -e "${RED}错误: 此脚本需要root权限运行${NC}"
+    echo -e "${YELLOW}请使用 sudo 或 root 用户运行此脚本${NC}"
+    exit 1
+fi
+
+# 检查docker是否安装
+if ! command -v docker &> /dev/null; then
+    echo -e "${RED}错误: docker 未安装${NC}"
+    exit 1
+fi
+
+# 检查docker-compose是否安装
+if ! command -v docker-compose &> /dev/null; then
+    echo -e "${RED}错误: docker-compose 未安装${NC}"
+    exit 1
+fi
+
+# 检查compose文件
+check_compose_file
+
+# 运行主菜单
+main_menu
