@@ -19,7 +19,7 @@ GRAY='\033[0;37m'
 NC='\033[0m' # 重置颜色
 
 # 定义docker-compose文件路径
-COMPOSE_FILE="/data/chatnio/docker-compose.yaml"
+COMPOSE_FILE="/data/coai/docker-compose.yaml"
 
 # 清屏函数
 clear_screen() {
