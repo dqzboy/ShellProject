@@ -12,4 +12,5 @@
 chmod +x manage_llm_docker.sh
 ./manage_llm_docker.sh
 ```
-![image](https://github.com/user-attachments/assets/8d65f62f-f2d6-49cb-bd60-7fbb3a66ecdd)
+
+![image](https://github.com/user-attachments/assets/8be1f9b7-0890-4c5b-8cd1-d2331c3b8326)
