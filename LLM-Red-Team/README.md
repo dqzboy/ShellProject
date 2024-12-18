@@ -14,3 +14,5 @@ chmod +x manage_llm_docker.sh
 ```
 
 ![image](https://github.com/user-attachments/assets/8be1f9b7-0890-4c5b-8cd1-d2331c3b8326)
+
+4、部署完成之后，到项目[LLM-Red-Team](https://github.com/LLM-Red-Team)查看对应大模型配置教程
