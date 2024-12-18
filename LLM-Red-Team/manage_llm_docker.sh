@@ -10,7 +10,6 @@
 #  ORGANIZATION: DingQz dqzboy.com 浅时光博客
 #===============================================================================
 
-# 定义颜色变量
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -129,7 +128,8 @@ main_menu() {
         echo -e "${CYAN}8)  Spark Free API    (端口: 8007)${NC}"
         echo -e "${CYAN}9)  Emohaa Free API   (端口: 8008)${NC}"
         echo -e "${CYAN}10) Doubao Free API   (端口: 8009)${NC}"
-        echo -e "${PURPLE}11) Watchtower 服务${NC}"
+        echo -e "${CYAN}11) Jimeng Free API   (端口: 8009)${NC}"
+        echo -e "${PURPLE}12) Watchtower 服务${NC}"
         echo -e "${RED}0)  退出脚本${NC}"
         
         read -ep $'\033[36m请输入选项数字: \033[0m' choice
@@ -145,7 +145,8 @@ main_menu() {
             8)  show_operation_menu "spark-free-api" ;;
             9)  show_operation_menu "emohaa-free-api" ;;
             10) show_operation_menu "doubao-free-api" ;;
-            11) show_operation_menu "watchtower" ;;
+            11) show_operation_menu "jimeng-free-api" ;;
+            12) show_operation_menu "watchtower" ;;
             0)
                 echo -e "${GREEN}感谢使用，再见！${NC}"
                 exit 0
