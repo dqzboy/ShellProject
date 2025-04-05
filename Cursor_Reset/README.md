@@ -1,5 +1,8 @@
 ## 必须按照下面的流程进行操作
 
+### 已验证版本
+- 版本: 0.48.7 (Universal)
+
 ### Mac OS
 #### 1、退出Cursor IDE账号
 ![image](https://github.com/user-attachments/assets/812fd1e9-98d1-46ba-b3f9-6b4f2a40ce10)
