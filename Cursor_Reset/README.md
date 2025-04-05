@@ -6,7 +6,7 @@
 
 #### 2、完全退出Cursor(如果没有退出脚本会提示)
 
-#### 3、运行Cursor重置脚本
+#### 3、打开终端运行Cursor重置脚本
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dqzboy/ShellProject/refs/heads/main/Cursor_Reset/Cursor_Reset_Mac.sh | bash
