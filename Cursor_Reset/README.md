@@ -3,6 +3,9 @@
 ### 已验证版本
 - 版本: 0.48.7 (Universal)
 
+### 注意事项
+- 网络环境干净、节点干净
+
 ### Mac OS
 #### 1、退出Cursor IDE账号
 ![image](https://github.com/user-attachments/assets/812fd1e9-98d1-46ba-b3f9-6b4f2a40ce10)
