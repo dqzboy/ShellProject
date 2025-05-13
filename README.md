@@ -38,12 +38,5 @@ ShellProject专注于提供一系列实用的 Bash Shell脚本工具，旨在帮
 
 ShellProject遵循 [MIT许可证](LICENSE)。
 
-## 联系我们
-
-如果你有任何问题或建议，请通过以下方式联系我们：
-
-- GitHub Issues：[https://github.com/dqzboy/ShellProject/issues](https://github.com/dqzboy/ShellProject/issues)
-- 交流群：
-  - [Telegram Group](https://t.me/dqzboyblog)
 
 感谢你使用 ShellProject，我们希望这些脚本能帮助你更高效地管理你的 Linux系统！
