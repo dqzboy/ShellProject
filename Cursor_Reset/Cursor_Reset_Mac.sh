@@ -6,7 +6,7 @@ echo "Cursor 重置工具"
 echo "此脚本将重置 Cursor 应用的标识信息以恢复试用期"
 echo "================================================"
 echo ""
-echo "步骤 1/8: 准备工作..."
+echo "步骤 1/7: 准备工作..."
 
 # 获取实际用户信息
 if [ -n "$SUDO_USER" ]; then
@@ -133,60 +133,13 @@ FILES=(
     "/Applications/Cursor.app/Contents/Resources/app/out/vs/code/node/cliProcessMain.js"
 )
 
-# 恢复功能
-restore_files() {
-    echo "================================================"
-    echo "开始恢复操作"
-    echo "================================================"
-    
-    # 检查是否有Cursor进程在运行
-    check_cursor_process
-    
-    echo "步骤 1/2: 恢复配置文件..."
-    # 恢复 storage.json
-    if [ -f "${STORAGE_JSON}.bak" ]; then
-        cp "${STORAGE_JSON}.bak" "$STORAGE_JSON" && {
-            echo "✅ 已恢复 storage.json"
-            # 确保恢复后的文件权限正确
-            chown $REAL_USER:staff "$STORAGE_JSON"
-            chmod 644 "$STORAGE_JSON"
-        } || echo "❌ 错误: 恢复 storage.json 失败"
-    else
-        echo "⚠️ 警告: storage.json 的备份文件不存在"
-    fi
-
-    echo "步骤 2/2: 恢复应用程序..."
-    # 恢复应用程序
-    if [ -d "/Applications/Cursor.backup.app" ]; then
-        echo "  正在恢复 Cursor.app..."
-        
-        # 删除当前应用并恢复备份
-        sudo rm -rf "/Applications/Cursor.app"
-        sudo mv "/Applications/Cursor.backup.app" "/Applications/Cursor.app" && {
-            echo "✅ 已恢复 Cursor.app"
-        } || echo "❌ 错误: 恢复 Cursor.app 失败"
-    else
-        echo "⚠️ 警告: Cursor.app 的备份不存在"
-    fi
-
-    echo "================================================"
-    echo "✅ 恢复操作完成"
-    echo "================================================"
-    exit 0
-}
-
-# 检查是否为恢复模式
-if [ "$1" = "--restore" ]; then
-    restore_files
-fi
-
 # 调用检查函数
-echo "步骤 2/8: 检查并关闭 Cursor 应用..."
+echo "步骤 2/7: 检查并关闭 Cursor 应用..."
 check_cursor_process
 echo "✅ Cursor 已关闭，继续执行..."
 echo ""
 
-echo "步骤 3/8: 更新标识信息..."
+echo "步骤 3/7: 更新标识信息..."
 # 更新 storage.json
 NEW_MACHINE_ID=$(generate_random_id)
 NEW_MAC_MACHINE_ID=$(generate_mac_machine_id)
@@ -246,7 +199,7 @@ echo "  • 新 devDeviceId: $NEW_DEV_DEVICE_ID"
 echo "  • 新 sqmId: $NEW_SQM_ID"
 echo ""
 
-echo "步骤 4/8: 复制应用到临时目录..."
+echo "步骤 4/7: 复制应用到临时目录..."
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 TEMP_DIR="/tmp/cursor_reset_${TIMESTAMP}"
 TEMP_APP="$TEMP_DIR/Cursor.app"
@@ -277,7 +230,7 @@ chmod -R 755 "$TEMP_DIR"
 echo "✅ 应用已成功复制到临时目录"
 echo ""
 
-echo "步骤 5/8: 移除应用签名..."
+echo "步骤 5/7: 移除应用签名..."
 codesign --remove-signature "$TEMP_APP" || {
     echo "⚠️ 警告: 移除应用签名失败，将继续执行"
 }
@@ -301,7 +254,7 @@ done
 echo "✅ 应用签名移除完成"
 echo ""
 
-echo "步骤 6/8: 修改应用核心文件..."
+echo "步骤 6/7: 修改应用核心文件..."
 # 修改临时应用中的文件
 FILES=(
     "$TEMP_APP/Contents/Resources/app/out/main.js"
@@ -359,37 +312,30 @@ codesign --sign - "$TEMP_APP" --force --deep || {
 echo "✅ 核心文件修改完成"
 echo ""
 
-echo "步骤 7/8: 安装修改后的应用..."
+echo "步骤 7/7: 安装修改后的应用..."
 # 关闭原应用
 echo "  确保 Cursor 已关闭..."
 osascript -e 'tell application "Cursor" to quit' || true
 sleep 2
 
-# 备份原应用
-echo "  备份原始应用..."
-if [ -d "/Applications/Cursor.backup.app" ];then
-    echo "  移除旧备份..."
-    sudo rm -rf "/Applications/Cursor.backup.app"
-fi
-sudo mv "/Applications/Cursor.app" "/Applications/Cursor.backup.app" || {
-    echo "❌ 错误: 无法备份原应用，请确保以 sudo 方式运行此脚本"
+# 直接替换原应用
+echo "  安装修改后的应用..."
+sudo rm -rf "/Applications/Cursor.app" || {
+    echo "❌ 错误: 无法删除原应用，请确保以 sudo 方式运行此脚本"
     rm -rf "$TEMP_DIR"
     exit 1
 }
 
 # 移动修改后的应用到应用程序文件夹
-echo "  安装修改后的应用..."
 sudo mv "$TEMP_APP" "/Applications/" || {
     echo "❌ 错误: 无法安装修改后的应用"
-    echo "  正在恢复原始应用..."
-    sudo mv "/Applications/Cursor.backup.app" "/Applications/Cursor.app"
     rm -rf "$TEMP_DIR"
     exit 1
 }
 echo "✅ 修改后的应用已成功安装"
 echo ""
 
-echo "步骤 8/8: 清理临时文件..."
+echo "步骤 7/7: 清理临时文件..."
 # 清理临时目录
 rm -rf "$TEMP_DIR"
 echo "✅ 临时文件已清理"
@@ -397,8 +343,6 @@ echo ""
 
 echo "================================================"
 echo "✅ Cursor 重置完成！"
-echo "  • 原始应用已备份至: /Applications/Cursor.backup.app"
 echo "  • 标识信息已更新，试用期已重置"
-echo "  • 如需恢复原始应用，请运行: sudo $0 --restore"
 echo "================================================"
 echo "现在可以启动 Cursor 尝试了！"
