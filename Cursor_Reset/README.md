@@ -26,3 +26,12 @@ curl -fsSL https://raw.githubusercontent.com/dqzboy/ShellProject/refs/heads/main
 #### 5、运行Cursor IDE登入新账号
 
 #### 6、现在又可以愉快的使用了！
+
+
+
+### 问题解决
+#### 问题1、Yourrequest hasbeenblocked as our system has detected suspiciousactivityfromyouraccount.
+![image](https://github.com/user-attachments/assets/4f0dd63f-3ba7-4413-ac90-674591de3f7c)
+
+##### 解决方法
+出现上面情况,请勿再次获取额度(因为每天获取次数是有限的请不要浪费次数), 先用 `auto` 对话，然后再切回去之前用`claude3.7` 就ok了
