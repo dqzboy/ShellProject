@@ -34,9 +34,14 @@ ShellProject专注于提供一系列实用的 Bash Shell脚本工具，旨在帮
 4. **推送分支**：`git push origin feature/your-feature-name`。
 5. **提交 Pull Request**。
 
+## 推广
+
+<a href="https://dqzboy.github.io/proxyui/racknerd" target="_blank">
+    <img src="https://cdn.jsdelivr.net/gh/dqzboy/Images/dqzboy-proxy/render-vps.png" alt="高性价比海外 VPS 推荐" title="点击查看">
+</a>
+
 ## 许可证
 
 ShellProject遵循 [MIT许可证](LICENSE)。
-
 
 感谢你使用 ShellProject，我们希望这些脚本能帮助你更高效地管理你的 Linux系统！
