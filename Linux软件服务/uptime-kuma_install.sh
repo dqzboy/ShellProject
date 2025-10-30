@@ -61,8 +61,9 @@ function SEPARATOR() {
 }
 
 save_path="/data/uptime"
-mkdir -p $save_path && cd /data/uptime
-compose_url="https://raw.githubusercontent.com/louislam/uptime-kuma/master/compose.yaml"
+mkdir -p $save_path
+#url="https://raw.githubusercontent.com/louislam/uptime-kuma/master/compose.yaml"
+UPTIME_PORT=3001
 
 function CHECK_OS() {
 SEPARATOR "检查环境"
@@ -254,7 +255,7 @@ fi
 function INSTALL_DOCKER() {
 SEPARATOR "安装Docker"
 repo_file="docker-ce.repo"
-docker_url="https://download.docker.com/linux/$repo_type"
+url="https://download.docker.com/linux/$repo_type"
 MAX_ATTEMPTS=3
 attempt=0
 success=false
@@ -264,9 +265,9 @@ if [ "$repo_type" = "centos" ] || [ "$repo_type" = "rhel" ]; then
       while [[ $attempt -lt $MAX_ATTEMPTS ]]; do
         attempt=$((attempt + 1))
         WARN "Docker 未安装，正在进行安装..."
-        yum-config-manager --add-repo $docker_url/$repo_file &>/dev/null
+        yum-config-manager --add-repo $url/$repo_file &>/dev/null
         $package_manager -y install docker-ce &>/dev/null
-        if [ $? -eq 0 ]; then
+        if [ $? -eq 0 ]; 键，然后
             success=true
             break
         fi
@@ -291,10 +292,10 @@ elif [ "$repo_type" == "ubuntu" ]; then
       while [[ $attempt -lt $MAX_ATTEMPTS ]]; do
         attempt=$((attempt + 1))
         WARN "Docker 未安装，正在进行安装..."
-        curl -fsSL $docker_url/gpg | sudo apt-key add - &>/dev/null
-        add-apt-repository "deb [arch=amd64] $docker_url $(lsb_release -cs) stable" <<< $'\n' &>/dev/null
+        curl -fsSL $url/gpg | sudo apt-key add - &>/dev/null
+        add-apt-repository "deb [arch=amd64] $url $(lsb_release -cs) stable" <<< $'\n' &>/dev/null
         $package_manager -y install docker-ce docker-ce-cli containerd.io &>/dev/null
-        if [ $? -eq 0 ]; then
+        if [ $? -eq 0 ]; 键，然后
             success=true
             break
         fi
@@ -320,8 +321,8 @@ elif [ "$repo_type" == "debian" ]; then
         attempt=$((attempt + 1))
 
         WARN "Docker 未安装，正在进行安装..."
-        curl -fsSL $docker_url/gpg | sudo apt-key add - &>/dev/null
-        add-apt-repository "deb [arch=amd64] $docker_url $(lsb_release -cs) stable" <<< $'\n' &>/dev/null
+        curl -fsSL $url/gpg | sudo apt-key add - &>/dev/null
+        add-apt-repository "deb [arch=amd64] $url $(lsb_release -cs) stable" <<< $'\n' &>/dev/null
         $package_manager -y install docker-ce docker-ce-cli containerd.io &>/dev/null
         if [ $? -eq 0 ]; then
             success=true
@@ -354,7 +355,6 @@ fi
 function PROMPT(){
 INFO
 INFO "=================感谢您的耐心等待，安装已经完成=================="
-UPTIME_PORT="3001"
 # 获取公网IP
 PUBLIC_IP=$(curl -s ip.sb)
 
@@ -377,30 +377,95 @@ INFO "================================================================"
 
 function INSTALL_SERVER() {
 SEPARATOR "开始安装"
-wget -O $save_path/docker-compose.yaml "$compose_url" &>/dev/null
+
+# 确保目录存在
+if [ ! -d "$save_path" ]; then
+    mkdir -p $save_path
+    INFO "创建目录: $save_path"
+fi
+
+cd $save_path || {
+    ERROR "无法进入目录: $save_path"
+    exit 1
+}
+
+# 提示输入端口
+read -e -p "$(INFO "请输入 uptime-kuma 访问端口 (默认: 3001): ")" UPTIME_PORT
+UPTIME_PORT=${UPTIME_PORT:-3001}
+INFO "使用端口: ${UPTIME_PORT}"
+
+# 创建 docker-compose.yaml 文件
+INFO "正在创建配置文件..."
+cat > $save_path/docker-compose.yaml <<EOF
+services:
+  uptime-kuma:
+    container_name: uptime-kuma
+    image: louislam/uptime-kuma:2
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    ports:
+      # <Host Port>:<Container Port>
+      - "${UPTIME_PORT}:3001"
+EOF
+
+if [ $? -eq 0 ]; then
+    INFO "配置文件创建成功"
+else
+    ERROR "配置文件创建失败"
+    exit 1
+fi
+
+# 验证文件是否存在且不为空
+if [ ! -s "$save_path/docker-compose.yaml" ]; then
+    ERROR "docker-compose.yaml 文件为空或不存在"
+    exit 1
+fi
+
 #启动 Docker容器
+INFO "正在启动 Docker 容器..."
+cd $save_path
 docker compose up -d
 
+if [ $? -ne 0 ]; then
+    ERROR "Docker compose 启动失败，请查看上方错误信息"
+    ERROR "可以尝试手动执行: cd $save_path && docker compose up -d"
+    exit 1
+fi
+
+# 等待容器启动
+INFO "等待容器启动..."
+sleep 5
 
 #检查 uptime-kuma容器状态
-status_uptime=`docker container inspect -f '{{.State.Running}}' uptime-uptime-kuma-1 2>/dev/null`
+for i in {1..10}; do
+    status_uptime=`docker container inspect -f '{{.State.Running}}' uptime-kuma 2>/dev/null`
+    if [[ "$status_uptime" == "true" ]]; then
+        break
+    fi
+    sleep 1
+done
 
 #判断容器状态并打印提示
 if [[ "$status_uptime" == "true" ]]; then
-    INFO ">>>>> Docker containers are up and running <<<<<"
+    INFO "容器启动成功！"
     #调用提示信息函数
     PROMPT
 else
-    ERROR ">>>>> The following containers are not up <<<<<"
-    if [[ "$status_uptime" != "true" ]]; then
-        ERROR "uptime-kuma 安装过程中出现问题，请检查日志或手动验证容器状态。"
-    fi
+    ERROR "容器启动超时，请检查容器状态"
+    ERROR "查看容器状态: docker ps -a"
+    ERROR "查看日志: docker compose logs -f"
+    exit 1
 fi
 }
 
 function UNISTALL_SERVER() {
 #卸载 uptime-kuma
 if docker ps -a --format "{{.Names}}" | grep -q "uptime-kuma"; then
+    cd $save_path || {
+        ERROR "无法进入目录: $save_path"
+        exit 1
+    }
     docker compose down
     INFO "uptime-kuma 已成功卸载。"
 else
@@ -409,9 +474,15 @@ fi
 }
 
 function UPDATE_SERVER() {
-#卸载 uptime-kuma
+#升级 uptime-kuma
 if docker ps -a --format "{{.Names}}" | grep -q "uptime-kuma"; then
+    cd $save_path || {
+        ERROR "无法进入目录: $save_path"
+        exit 1
+    }
+    INFO "正在拉取最新镜像..."
     docker compose pull
+    INFO "正在重新创建容器..."
     docker compose up -d --force-recreate
     INFO "uptime-kuma已成功升级。"
 else
@@ -419,18 +490,50 @@ else
 fi
 }
 
+function RESTART_SERVER() {
+#重启 uptime-kuma
+if docker ps -a --format "{{.Names}}" | grep -q "uptime-kuma"; then
+    cd $save_path || {
+        ERROR "无法进入目录: $save_path"
+        exit 1
+    }
+    INFO "正在重启 uptime-kuma 服务..."
+    docker compose restart
+    INFO "uptime-kuma已成功重启。"
+else
+    WARN "没有找到 uptime-kuma容器，无法执行重启操作"
+fi
+}
+
+function STOP_SERVER() {
+#停止 uptime-kuma
+if docker ps -a --format "{{.Names}}" | grep -q "uptime-kuma"; then
+    cd $save_path || {
+        ERROR "无法进入目录: $save_path"
+        exit 1
+    }
+    INFO "正在停止 uptime-kuma 服务..."
+    docker compose stop
+    INFO "uptime-kuma已成功停止。"
+else
+    WARN "没有找到 uptime-kuma容器，无法执行停止操作"
+fi
+}
+
 
 function main_menu() {
 SEPARATOR "请选择操作"
 echo -e "1) ${BOLD}${LIGHT_GREEN}安装${RESET}服务"
-echo -e "2) ${BOLD}${LIGHT_MAGENTA}卸载${RESET}服务"
-echo -e "3) ${BOLD}${LIGHT_YELLOW}更新${RESET}服务"
+echo -e "2) ${BOLD}${LIGHT_YELLOW}更新${RESET}服务"
+echo -e "3) ${BOLD}${LIGHT_BLUE}重启${RESET}服务"
+echo -e "4) ${BOLD}${LIGHT_RED}停止${RESET}服务"
+echo -e "5) ${BOLD}${LIGHT_MAGENTA}卸载${RESET}服务"
 echo -e "0) ${BOLD}退出脚本${RESET}"
 echo "---------------------------------------------------------------"
 read -e -p "$(INFO "输入${LIGHT_CYAN}对应数字${RESET}并按${LIGHT_GREEN}Enter${RESET}键 > ")" main_choice
 
 
-case $main_choice in
+case $main_choice 在
     1)
         CHECK_OS
         CHECK_PACKAGE_MANAGER
@@ -441,16 +544,22 @@ case $main_choice in
         INSTALL_SERVER
         ;;
     2)
-        UNISTALL_SERVER
+        UPDATE_SERVER
         ;;
     3)
-        UPDATE_SERVER
+        RESTART_SERVER
+        ;;
+    4)
+        STOP_SERVER
+        ;;
+    5)
+        UNISTALL_SERVER
         ;;
     0)
         exit 1
         ;;
     *)
-        WARN "输入了无效的选择。请重新${LIGHT_GREEN}选择0-3${RESET}的选项."
+        WARN "输入了无效的选择。请重新${LIGHT_GREEN}选择0-5${RESET}的选项."
         sleep 2; main_menu
         ;;
 esac
