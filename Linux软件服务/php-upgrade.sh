@@ -24,18 +24,123 @@
 #        --min-version <v>  断言最低版本，如 8.5.12；不满足即失败（通用合规校验）
 #        --status           只打印当前状态后退出
 #        --mirror <源>      切换 remi 源：official | tuna | ustc
+#        --mirror-epel <源> 切换 EPEL 源：official | tuna | ustc | aliyun | huawei
+#        --mirror-os <源>   切换官方源：tencent | tuna | ustc | aliyun | huawei | official
+#        --audit            系统源体检：逐个测速 + 查重复 repo 定义
+#        --rc               允许升级到 RC（remi-modular-test）。默认只报不装，
+#                           装不装由你决定；Remi 官方标注 RC 不适合生产
 #    -y, --yes              无人值守：不再确认，失败自动回滚
 #        --imagick          强制安装/升级 php-pecl-imagick（im7 优先）
 #        --no-imagick       完全跳过 imagick
 #        --menu             强制进入交互菜单
 #    -h, --help             显示本帮助
+#
+#  菜单项:
+#    升级    1 执行升级   2 预演升级   3 安全补丁
+#    源管理  4 切换源（Remi/EPEL/官方，进入即实测）+ 全面体检
+#    其他    5 当前状态   6 参数说明   0 退出
 # =============================================================================
 
 set -uo pipefail
 
 ARG_COUNT=$#
 PROG=${0##*/}
-SCRIPT_VER="build-20261021-2325"   # 用于确认手上跑的是不是最新一份
+SCRIPT_VER="build-20261022-0040"   # 用于确认手上跑的是不是最新一份
+# build-20261022-0040 菜单去掉重复的"源检测" + 修 detect_host 顺序 bug：
+#   · 切换源进去就实测候选镜像，独立的"源检测"菜单是重复的 → 移除并重编号。
+#     但"全面体检"（查重复定义）不重复，挪进源管理子菜单保留。
+#   · detect_host 的 enabled 过滤有顺序 bug：baseurl 常写在 enabled 之前
+#     （实测 CentOS-Stream-Sources.repo：baseurl 第 5 行、enabled=0 第 7 行），
+#     边读边判会把 enabled=0 的也统计进去 → vault.centos.org 仍盖过真实源。
+#     改成按 section 缓冲、段末再判。
+#
+# build-20261022-0035 坏路径自愈 + 菜单源信息分行：
+#   · repair_os_paths()：baseurl 形态换源**只换 host 不换路径**，所以上一版拼错的
+#     extras-common 路径会一直留着，再换一次源也修不好。现在按 section 重写规范路径。
+#   · os_repo_path 同时认 section 名（extras-common）和 metalink 段名
+#     （extras-sig-extras-common）—— 只认一个会静默漏修。
+#   · os_repo_path 改用 $BASEARCH，不再硬编码 x86_64。
+#   · 菜单源信息改成 Remi / EPEL / 官方 各一行，标明归属。
+#   · "环境"段不再打印脚本版本。
+#
+# build-20261022-0030 修"换源成功但 makecache 4s 失败"+ 菜单顶部显示错源：
+#   · extras-common 路径拼错致 404：section 名是 extras-common，
+#     metalink 是 repo=centos-extras-sig-extras-common-$stream，
+#     而 grep -oE 'repo=centos-[a-z]+' 只吃到 "extras" → 拼出
+#     .../9-stream/extras/x86_64/os/ → 四个镜像全 404。
+#     真实路径是 SIGs/9-stream/extras/x86_64/extras-common/（结构完全不同）。
+#     新增 os_repo_path() 映射全部 8 个仓库，实测 8/8 HTTP 200。
+#   · detect_host 把 enabled=0 的也算进"出现次数"：CentOS-Stream-Sources.repo
+#     里 7 条 vault.centos.org（全是 Source 段、enabled=0）盖过真正生效的源，
+#     菜单顶部一直显示"自定义（vault.centos.org）"。改成只统计 enabled=1。
+#   · run_probe 现在收集 stderr 到 PROBE_ERR（原来 2>/dev/null 丢掉），
+#     makecache 失败时打印 dnf 真实报错 + 分类提示（404/仓库名/文件损坏），
+#     不再只说"makecache 未完成"。
+#
+# build-20261022-0025 主菜单按"升级 / 源管理 / 其他"三组重构：
+#   · 9 项平铺 → 7 项分组，6/7/8 全是"切换源"收成一项二级菜单
+#   · 4) 源检测 也收成父菜单：Remi / EPEL / 官方 / 全面体检
+#   · 抽出 show_remi_bench / show_epel_bench / show_os_bench 三个测速展示函数，
+#     检测菜单和切换菜单**共用同一套**，保证两处看到的数字一致
+#   · Remi 切换源补上现场测速（之前只有 EPEL/官方源有）
+#
+# build-20261022-0020 版本号要说清楚 + 版本一致就不升级：
+#   · 确认提示给出"从 X 更新到 Y"（之前只说"分支内小版本更新"，看不出几升到几）
+#   · 完成提示带具体版本：`升级完成：PHP 8.5.11 → 8.5.12RC1`
+#     （之前只说"升级完成：PHP 8.5"，用户还得自己跑 php --version 核对）
+#   · php_upgrade_needed()：本机版本 == 仓库最新时**直接跳过**，
+#     不白跑事务、不动服务（线上尤其不能"没有变化也走一遍"）。预演模式除外。
+#   · 菜单头删掉"（默认，可在下一步改）"
+#
+# build-20261022-0015 修"提示了却不给选择入口"：
+#   RC 存在时给出**真实的 y/N 交互**，而不是只打印"由你决定"就没下文。
+#   默认（空回车）保持稳定版；选 y 才置 USE_RC=1 并**重算仓库作用域**
+#   （不清 REPO_READY 的话 build_repo_args 不会重跑，升级仍只加载稳定仓库，RC 装不上）。
+#   无人值守 / 非交互 / -y 一律不擅自上 RC，只提示加 --rc。
+#
+# build-20261022-0010 提供 RC 信息但由用户决定是否升级：
+#   · candidate_rc_php_common()：单独查测试仓库（remi-modular-test / remi-test）的 RC，
+#     只报不装。用户在 Remi 博客看到的 "8.5.12" 常是 8.5.12RC1（10-09 发的测试包），
+#     而稳定仓库最高只有 8.5.11 —— 之前只查稳定仓库就误判成"Remi 没发布过 8.5.12"。
+#   · --rc：显式开启才把测试仓库纳入升级范围；不加则**显式 --disablerepo 测试仓库**，
+#     防止手动启用过的测试仓库把 RC 漏进生产升级。
+#   · 菜单 7/8/9 去掉粗体和"进入后本机实测"/"回答'为啥这么慢'"两段提示。
+#
+# build-20261021-2355 修"查不到候选版本" + 去掉 7 条 No repository match 噪音：
+#   · query_pkg_version()：候选版本查询失败时不再只报"失败或超时"，而是打印
+#     原始输出/可能原因。旧实现 `dnf -q list --available` 有两个坑：
+#     (1) -q 在部分 dnf 版本里是"完全静默"，包列表都不打；
+#     (2) 解析用 `^php-common\.`，而 awk 字符串里 "\." 被解析成 "."（任意字符），
+#         php-common-devel 也会命中。现在优先 repoquery --queryformat（确定性输出），
+#         退回 list 时用 $1 == p 精确匹配包名。
+#   · php_repo_scope()：只对真实存在的仓库下发 --enablerepo/--disablerepo，
+#     否则每次升级前刷一屏 "No repository match: remi-php74/80/…85"。
+#   · fix_duplicate_repos()：重复 repo id 自动去重（保留一份、其余整段注释），
+#     备份到 /var/backups/dup-repo-<ts>。全 enabled=0 的组也要去重 ——
+#     "listed more than once" 是解析配置时报的，跟 enabled 无关。
+#   · audit_sys_repos：报告覆盖情况（实测 N / 共 M），没测全就不下"都不慢"的结论；
+#     section 匹配容忍尾随空格；支持 metalink 形态。
+#
+# build-20261021-2345 修"换了源还是很慢" + 去掉写死的镜像结论：
+#   · build_scope_args()：refresh_sys_meta 的 makecache 之前没有仓库作用域，
+#     会把 Aeris/ELRepo/epel-next/腾讯云源等全部拉一遍 —— 这是"EPEL 换成阿里云
+#     0.058s 了但刷新元数据还是 109s"的直接原因。现在只刷 PHP 真正需要的仓库。
+#   · bench_one/bench_get/bench_fastest/bench_menu_line：菜单 7/8 进入后当场测速，
+#     用本机实测数据替代写死的"阿里云实测最快""EPEL 是慢的主因"。
+#     镜像快慢取决于地区/运营商/时段，一台机器的结论搬到另一台就是错的。
+#   · audit_sys_repos 支持 metalink 形态：之前只认 baseurl=，EPEL 默认用 metalink，
+#     导致它被continue 跳过 —— 体检报告里永远看不到最慢的那个源。
+#     metalink 的地址在 <url>...</url> 元素文本里，不是 href 属性。
+#
+# build-20261021-2330 新增系统源治理（dnf 卡 30 分钟的根因在这一层）：
+#   · --audit / 菜单 9：逐个测 enabled 仓库的 repomd.xml，列出 >1s 的慢源，
+#     并检测多个文件重复定义同一 [section]（dnf 的 "listed more than once"）
+#   · --mirror-epel / 菜单 7：EPEL 用 metalink= 而非 baseurl=，切换逻辑独立实现，
+#     逐 section 写入对应路径（Everything / debug / source-tree）
+#   · --mirror-os / 菜单 8：CentOS 官方源（腾讯云/清华/中科大/阿里云/华为云）
+#   · upgrade_packages 改为仓库白名单：只加载 remi+baseos/appstream/crb/epel，
+#     跳过 Aeris(6 kB/s)、ELRepo、epel-next 等与 PHP 无关的仓库
+#   · RO_OPTS 加 minrate=1024：dnf 下载过慢时快速放弃而不是死等
 # build-20261021-2325 修复三处：
 #   1) 换源 sed 只匹配 https://rpms.remirepo.net/，而官方文件里是 http://，
 #      且 [remi-safe]/[remi-modular] 的路径是 safe/ modular/ 而非 remi/ -> 地址根本没换
@@ -47,6 +152,11 @@ INTERACTIVE=0
 ASSUME_YES=0
 MIN_VERSION=""           # 通用合规基线，如 8.5.12
 IMAGICK_MODE="auto"      # auto=仅在已装时升级 | always | never
+# 是否允许升级到 RC（remi-modular-test）。默认 0：只报不装，装不装由用户显式决定。
+# Remi 的 RC 通知里明确写着不适合生产，所以绝不能默认开。
+USE_RC=0
+RC_VALUE=""              # 测试仓库里的 RC 版本号，如 8.5.12~RC1
+RC_CHECKED=0
 TS=$(date +%Y%m%d-%H%M%S)
 BACKUP_ROOT="/var/backups"          # 所有备份统一放这里
 BACKUP_DIR=""
@@ -69,6 +179,7 @@ PICKED=""
 CAND_SUFFIX=""
 CAND_VALUE=""
 PROBE_ELAPSED=0
+PROBE_ERR=""            # run_probe 收集的 stderr，失败时用来诊断
 NET_CHECKED=""
 NET_RC=0
 MIRROR=""
@@ -78,7 +189,15 @@ SYS_EPEL_ROOT=""
 SYS_OS_HOST=""
 SYS_OS_ROOT=""
 SYS_OS_PREFIX=""
+PHP_SCOPE_ARGS=()
+# 系统源作用域（--disablerepo/--enablerepo 组合），由 build_scope_args 生成
+SCOPE_ARGS=()
 STREAM_CACHE=""
+# 现场测速结果缓存：bench_candidates 把 "key<TAB>耗时秒" 逐行写进来，
+# 菜单据此标注"本机实测最快"，而不是写死开发机上的结论。
+BENCH_KEYS=()
+BENCH_TIMES=()
+BENCH_DONE=0
 # 转圈动画帧（braille），run_probe 用；PROBE_LABEL 由调用方设置
 SPIN_FRAMES=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 PROBE_LABEL=""
@@ -93,7 +212,12 @@ fi
 
 # 只读查询的公共选项：自动接受 GPG key（首次访问 remi-modular 会交互提示，
 # 不加这个脚本就会卡住）、缩短超时、少重试；外层再套 timeout 兜底
-RO_OPTS=(--setopt=assumeyes=True --setopt=timeout=30 --setopt=retries=1)
+#
+# minrate 是关键：dnf 在下载速度持续低于该值（字节/秒）时会直接放弃这个
+# 源并报错，而不是傻等。实测 EPEL 走官方 metalink 时只有 11 kB/s，
+# 进度条显示 "30:33 E"（超时失败）——minrate 让它几秒内就跳过。
+RO_OPTS=(--setopt=assumeyes=True --setopt=timeout=30 --setopt=retries=1 \
+         --setopt=minrate=1024 --setopt=skip_if_unavailable=False)
 RO_TIMEOUT=120
 
 log()  { printf '%s\n' "$*"; }
@@ -136,6 +260,10 @@ while [ $# -gt 0 ]; do
     --min-version)    [ $# -ge 2 ] || die "$1 需要参数"; MIN_VERSION="$2"; shift 2 ;;
     --status)         MODE="status"; shift ;;
     --mirror)         [ $# -ge 2 ] || die "$1 需要参数"; MIRROR="$2"; MODE="mirror"; shift 2 ;;
+    --mirror-epel)   [ $# -ge 2 ] || die "$1 需要参数"; MIRROR="$2"; MODE="mirror-epel"; shift 2 ;;
+    --mirror-os)     [ $# -ge 2 ] || die "$1 需要参数"; MIRROR="$2"; MODE="mirror-os"; shift 2 ;;
+    --audit)         MODE="audit"; shift ;;
+    --rc)            USE_RC=1; shift ;;
     --menu)           INTERACTIVE=1; shift ;;
     -y|--yes)         ASSUME_YES=1; shift ;;
     --imagick)        IMAGICK_MODE="always"; shift ;;
@@ -173,6 +301,11 @@ build_repo_args() {
   avail=$(timeout "$RO_TIMEOUT" "$PM" "${RO_OPTS[@]}" repolist --all 2>/dev/null \
             | awk 'NR > 1 && $1 ~ /^remi/ { print $1 }')
   local want=(remi remi-safe remi-modular "remi-php${SUFFIX}")
+  # 只有用户显式 --rc 才把测试仓库纳进来。默认只用稳定仓库，
+  # 避免 dnf 自作主张把 RC 推给生产机。
+  if [ "$USE_RC" = 1 ]; then
+    want+=(remi-modular-test remi-test "remi-php${SUFFIX}-test")
+  fi
   for r in "${want[@]}"; do
     printf '%s\n' "$avail" | grep -qx "$r" && REPO_ARGS+=("--enablerepo=$r")
   done
@@ -180,6 +313,31 @@ build_repo_args() {
   # 探测类查询只加载 remi 仓库：php 包都在这里，
   # 关掉 baseos/appstream 能少下几十 MB 元数据，是"卡住"的主因
   PROBE_ARGS=(--disablerepo='*' "${REPO_ARGS[@]}")
+  return 0
+}
+
+# 系统源作用域：只加载 PHP 升级真正需要的仓库，其余全部 --disablerepo 掉。
+# 结果写入全局数组 SCOPE_ARGS（不用 nameref：bash 4.2 的 RHEL 7/8 不支持 local -n）。
+#
+# 为什么必须加：makecache 默认拉**所有** enabled 仓库的元数据。实测一台腾讯云
+# CentOS Stream 9 上，Aeris(~6 kB/s)、ELRepo、epel-next、腾讯云源加起来就够等一两分钟，
+# 而其中没有一个装PHP 需要的包。白名单里放 EPEL 是因为部分 php-* 依赖它。
+SCOPE_ARGS=()
+build_scope_args() {
+  SCOPE_ARGS=()
+  local avail r
+  avail=$(timeout "$RO_TIMEOUT" "$PM" "${RO_OPTS[@]}" repolist --all 2>/dev/null | awk 'NR>1 {print $1}')
+  [ -n "$avail" ] || return 1
+
+  local want=(baseos appstream crb extras-common epel
+              remi remi-safe remi-modular "remi-php${SUFFIX}")
+  local -a keep=()
+  for r in "${want[@]}"; do
+    printf '%s\n' "$avail" | grep -qx "$r" && keep+=("$r")
+  done
+  [ ${#keep[@]} -gt 0 ] || return 1
+
+  SCOPE_ARGS=(--disablerepo='*' "${keep[@]/#/--enablerepo=}")
   return 0
 }
 
@@ -207,7 +365,7 @@ proc_alive() {
 # 于是"上限 180s"实际跑到 190s —— 这里把承诺和现实对齐。
 run_probe() {
   local limit=$1; shift
-  local out pid rc=0 t=0 start elapsed soft grace
+  local out errf pid rc=0 t=0 start elapsed soft grace
   start=$(date +%s)
   # soft + grace 必须正好等于 limit，否则小预算时总时长会翻倍
   if [ "$limit" -gt 20 ]; then
@@ -217,7 +375,11 @@ run_probe() {
   fi
   [ "$soft" -lt 1 ] && soft=1
   out=$(mktemp) || return 1
-  ( timeout -k "$grace" "$soft" "$@" >"$out" 2>/dev/null ) &
+  errf=$(mktemp) || { rm -f "$out"; return 1; }
+  PROBE_ERR=""
+  # stderr 收集到 PROBE_ERR 而不是丢弃：失败时得知道为什么失败，
+  # 否则用户只看到"makecache 未完成"，看不出是 404 还是仓库名不认。
+  ( timeout -k "$grace" "$soft" "$@" >"$out" 2>"$errf" ) &
   pid=$!
 
   # 转圈动画：0.2s 一帧，用 SECONDS 算已用时间（不 fork date）
@@ -237,8 +399,9 @@ run_probe() {
   wait "$pid" 2>/dev/null || rc=$?
   elapsed=$(( $(date +%s) - start ))
   PROBE_ELAPSED=$elapsed
+  PROBE_ERR=$(cat "$errf" 2>/dev/null)
   cat "$out"
-  rm -f "$out"
+  rm -f "$out" "$errf"
   return "$rc"
 }
 
@@ -274,11 +437,65 @@ refresh_meta() {
 
 pkg_has_candidate() {
   local raw
-  PROBE_LABEL="查询 $1"
-  raw=$(run_probe 60 "$PM" -q "${RO_OPTS[@]}" "${PROBE_ARGS[@]}" list --available "$1")
-  PROBE_LABEL=""
-  printf '%s\n' "$raw" | grep -qF "$1."
+  raw=$(query_pkg_version "$1")
+  [ -n "$raw" ]
 }
+
+# 查某个包在仓库里的最新版本。返回版本号（如 8.5.12），查不到返回空。
+#
+# 为什么不用 `dnf -q list --available`：
+#   1) `-q` 在部分 dnf 版本里是"完全静默"，连包列表都不打，解析就拿到空；
+#   2) `list` 的输出格式随 dnf 版本/locale 变（列对齐、列顺序），靠 awk 切列很脆；
+#   3) 查不到时原样只说"失败或超时"，根本看不出是网络问题还是解析问题。
+# 改成：优先 `repoquery --queryformat`（确定性单行输出），失败再退回 `list`，
+# 两条路都不通就把原始输出打出来 —— 没有诊断信息的失败等于没查。
+query_pkg_version() {   # $1=包名
+  local pkg=$1 raw v
+  PROBE_LABEL="查询 $pkg 候选版本"
+
+  # 路线 1：repoquery 直接给出格式化结果，不需要解析列
+  if command -v "$PM" >/dev/null 2>&1; then
+    v=$(run_probe 60 "$PM" "${RO_OPTS[@]}" "${PROBE_ARGS[@]}" \
+          repoquery --queryformat '%{VERSION}\n' --latest-limit 1 "$pkg" 2>/dev/null \
+          | grep -E '^[0-9]' | tail -1)
+    if [ -n "$v" ]; then
+      PROBE_LABEL=""
+      printf '%s' "$v"
+      return 0
+    fi
+  fi
+
+  # 路线 2：退回 list --available（不加 -q，避免被静默）
+  raw=$(run_probe 60 "$PM" "${RO_OPTS[@]}" "${PROBE_ARGS[@]}" list --available "$pkg")
+  # 只认精确包名（`php-common` 或 `php-common.x86_64`）。
+  # 注意 awk 字符串里必须写 "\\\\." 才是正则里的转义点：写成 "\." 会被 awk
+  # 解析成 "."（匹配任意字符），于是 php-common-devel 也匹配上了。
+  # 同样不能用 `^php-common[.-]`，那也放得进 -devel。
+  v=$(printf '%s\n' "$raw" | awk -v p="$pkg" '
+        $1 == p || $1 ~ ("^" p "\\.") {
+          for (i=1;i<=NF;i++) if ($i ~ /^[0-9]/ && $i ~ /[-.]/) { print $i; exit }
+        }
+      ' | cut -d- -f1)
+
+  PROBE_LABEL=""
+  if [ -n "$v" ]; then
+    printf '%s' "$v"
+    return 0
+  fi
+
+  # 两条路都不通：把原始输出留下来，否则用户只知道"失败"，不知道为什么
+  if [ -n "$raw" ]; then
+    warn "$pkg 查询有输出但没解析出版本号，原始输出如下："
+    printf '%s\n' "$raw" | sed 's/^/      /' | head -12
+  else
+    warn "$pkg 查询完全没有输出，可能原因："
+    warn "  1) 仓库作用域里的仓库名不被 dnf 认可（检查上面是否打印 No repository match）"
+    warn "  2) 该包不在当前作用域的仓库里"
+    warn "  3) 元数据太旧，看不到新版本: sudo $PM makecache --refresh"
+  fi
+  return 1
+}
+
 # 仓库里 php-common 的最新版本（判断"目标分支有没有货 / 有没有新补丁"）
 # 带缓存：菜单里反复预演不会每次都去问一遍仓库
 candidate_php_common() {
@@ -286,16 +503,67 @@ candidate_php_common() {
     printf '%s' "$CAND_VALUE"
     return 0
   fi
-  local raw v
-  PROBE_LABEL="查询 php-common 候选版本"
-  raw=$(run_probe 60 "$PM" -q "${RO_OPTS[@]}" "${PROBE_ARGS[@]}" list --available php-common)
-  PROBE_LABEL=""
-  v=$(printf '%s\n' "$raw" | awk '/^php-common\./ { print $2; exit }' | cut -d- -f1)
+  local v
+  v=$(query_pkg_version php-common) || v=""
   if [ -n "$v" ]; then
     CAND_SUFFIX="$SUFFIX"
     CAND_VALUE="$v"
   fi
   printf '%s' "$v"
+}
+
+# 测试仓库（remi-modular-test / remi-test）里的 RC 版本。
+#
+# 为什么单独查：RC 在**测试仓库**，和稳定仓库不是一回事。
+# 用户在 Remi 博客上看到的 "8.5.12" 很可能是 8.5.12RC1（10-09 发的测试包），
+# 而稳定仓库最高只有 8.5.11 —— 之前只查稳定仓库就误判成"Remi 没发布过 8.5.12"。
+#
+# 返回形如 `8.5.12~RC1` 的完整版本号（注意 `~`：RPM 里表示"低于同版本正式版"）。
+# 只报不装：是否升 RC 由用户显式决定（USE_RC / --rc）。
+candidate_rc_php_common() {
+  if [ "$RC_CHECKED" = 1 ]; then
+    printf '%s' "$RC_VALUE"
+    return 0
+  fi
+  RC_CHECKED=1
+  local v raw
+  # 只开测试仓库，别把稳定仓库混进来（否则会返回 8.5.11 而不是 RC）
+  local -a test_scope=(--disablerepo='*')
+  local avail r
+  avail=$(timeout "$RO_TIMEOUT" "$PM" "${RO_OPTS[@]}" repolist --all 2>/dev/null \
+            | awk 'NR > 1 { print $1 }' | sort -u)
+  for r in remi-modular-test remi-test "remi-php${SUFFIX}-test"; do
+    printf '%s\n' "$avail" | grep -qx "$r" && test_scope+=("--enablerepo=$r")
+  done
+  # 测试仓库一个都没识别出来：直接返回空，别拿稳定仓库的数据冒充 RC
+  [ ${#test_scope[@]} -gt 1 ] || { RC_VALUE=""; printf ''; return 0; }
+
+  PROBE_LABEL="查询测试仓库 RC 版本"
+  raw=$(run_probe 60 "$PM" "${RO_OPTS[@]}" "${test_scope[@]}" \
+          repoquery --queryformat '%{VERSION}\n' --latest-limit 1 php-common 2>/dev/null \
+          | grep -E '^[0-9]' | tail -1)
+  PROBE_LABEL=""
+
+  if [ -z "$raw" ]; then
+    raw=$(run_probe 60 "$PM" "${RO_OPTS[@]}" "${test_scope[@]}" list --available php-common)
+    raw=$(printf '%s\n' "$raw" | awk -v p="php-common" '
+            $1 == p || $1 ~ ("^" p "\\.") {
+              for (i=1;i<=NF;i++) if ($i ~ /^[0-9]/ && $i ~ /[-.]/) { print $i; exit }
+            }' | cut -d- -f1)
+  fi
+
+  # 只认带 RC 标记的，避免把稳定版混进来
+  case "$raw" in
+    *RC*|*rc*|*alpha*|*beta*|*~*) v="$raw" ;;
+    *) v="" ;;
+  esac
+  RC_VALUE="$v"
+  printf '%s' "$v"
+}
+
+# 把版本号里的 RC 标记提出来给人看：8.5.12~RC1 -> RC1
+rc_tag_of() {
+  printf '%s' "$1" | grep -oiE '(rc[0-9]*|alpha[0-9]*|beta[0-9]*)$' | tr '[:upper:]' '[:lower:]'
 }
 
 # 等一个回车再返回菜单。先排空输入缓冲区，
@@ -318,6 +586,26 @@ detect_fpm_unit() {
 current_php_version() {
   command -v php >/dev/null 2>&1 || return 0
   php -v 2>/dev/null | head -1 | awk '{ print $2 }'
+}
+
+# 本次升级的目标版本号：选了 RC 就用 RC，否则用稳定仓库最新。查不到返回空。
+target_php_version() {
+  if [ "$USE_RC" = 1 ] && [ -n "$RC_VALUE" ]; then
+    printf '%s' "$RC_VALUE"
+    return 0
+  fi
+  candidate_php_common
+}
+
+# 版本完全一致就别走事务 —— 线上尤其不能"没有变化也重启一遍服务"。
+# 返回 0 = 确实有变化要升；1 = 已是最新（调用方应跳过）；
+# 拿不到版本信息时返回 0（不挡，交给 dnf 自己判断）。
+php_upgrade_needed() {
+  local cur tgt
+  cur=$(current_php_version)
+  tgt=$(target_php_version)
+  [ -n "$cur" ] && [ -n "$tgt" ] || return 0
+  [ "$cur" != "$tgt" ]
 }
 
 # 所有 php 相关包的 name-version-release 快照，用来判断"这次到底有没有真的装上/升上东西"
@@ -347,7 +635,6 @@ preflight_light() {
   step "环境"
   log "  发行版  : $PRETTY_OS  (el${EL_MAJOR})"
   log "  包管理器: $PM"
-  log "  脚本版本: $SCRIPT_VER"
   case "$MODE" in
     security) log "  任务    : 安全补丁（保持当前分支）" ;;
     apply)    log "  任务    : 版本升级 -> PHP $TARGET" ;;
@@ -421,12 +708,67 @@ probe_url() {   # $1=名称 $2=url；可达则记录耗时到 PROBE_LAST_T 并�
   return 1
 }
 
+# ── 候选镜像现场测速 ──────────────────────────────────────────────────
+# 为什么必须现场测而不是写死"XX 最快"：
+#   最优镜像取决于机器所在地区、运营商、时段，一台机器上测出的结论搬到
+#   另一台就是错的。之前把"阿里云实测最快"硬编码进菜单，用户在另一台机器上
+#   看到的是未经测量的断言。改成：进入菜单先实测（每个最多 6s），把结果
+#   和"最快"标记一起显示。
+#
+# bench_one <key> <url>   —— 结果写入 BENCH_TIMES（不可达则为空）
+bench_one() {
+  local key=$1 url=$2 t
+  BENCH_KEYS+=("$key")
+  BENCH_TIMES+=("")
+  if t=$(curl -fsS -o /dev/null --connect-timeout 3 --max-time 6 \
+           -w '%{time_total}' "$url" 2>/dev/null); then
+    BENCH_TIMES[${#BENCH_TIMES[@]}-1]="$t"
+  fi
+}
+
+# 取某个候选的实测耗时（秒，最多 4 位小数）；不可达返回空
+bench_get() {
+  local key=$1 i
+  for i in "${!BENCH_KEYS[@]}"; do
+    [ "${BENCH_KEYS[$i]}" = "$key" ] && { printf '%s' "${BENCH_TIMES[$i]}"; return 0; }
+  done
+  return 1
+}
+
+# 本机实测最快的 key（只在有成功结果时返回）
+bench_fastest() {
+  local i best="" bt=""
+  for i in "${!BENCH_KEYS[@]}"; do
+    [ -n "${BENCH_TIMES[$i]}" ] || continue
+    if [ -z "$bt" ] || awk "BEGIN{exit !(${BENCH_TIMES[$i]} < $bt)}"; then
+      bt="${BENCH_TIMES[$i]}"; best="${BENCH_KEYS[$i]}"
+    fi
+  done
+  [ -n "$best" ] && printf '%s' "$best"
+}
+
+# 打印一行候选菜单：<行号> <名称> <key> <url> <当前key>
+# 实测数据 + "本机最快"标记 + "← 当前"标记，全部来自现场测速结果。
+bench_menu_line() {
+  local num=$1 name=$2 key=$3 url=$4 cur=$5 t mark
+  t=$(bench_get "$key" 2>/dev/null) || t=""
+  if [ -n "$t" ]; then
+    mark="${C_D}${t}s${C_N}"
+    [ "$(bench_fastest)" = "$key" ] && mark="${C_G}${t}s 本机最快${C_N}"
+  else
+    mark="${C_R}不可达${C_N}"
+  fi
+  [ "$cur" = "$key" ] && mark="$mark ${C_C}← 当前${C_N}"
+  log "    ${num}) ${name} ${C_D}${url}${C_N}"
+  log "         ${mark}"
+}
+
 check_connectivity() {
   [ "$NET_CHECKED" = "$EL_MAJOR" ] && return "$NET_RC"
   NET_CHECKED="$EL_MAJOR"
   NET_RC=0
 
-  step "Remi 源连通性"
+  step "Remi 源检测（官方 / 清华 / 中科大）"
   if ! command -v curl >/dev/null 2>&1; then
     warn "没有 curl，跳过连通性检查"
     return 0
@@ -480,7 +822,9 @@ check_connectivity() {
   return 0
 }
 
-# 菜单里的"测源连通性"：测完直接给切换选项，不用再去记参数
+# 菜单里的"Remi 源检测"：测完直接给切换选项，不用再去记参数
+# 注意只覆盖 remi 的三个源；EPEL / 官方源各有独立入口（菜单 7 / 8），
+# 那两个进去是当场实测候选源，和这里的连通性探测不是一回事。
 nettest_action() {
   local mc
   NET_CHECKED=""
@@ -598,24 +942,35 @@ apply_mirror() {
     done
   fi
 
-  # 换了源必须清缓存，否则 dnf 还拿着旧 baseurl 的元数据。
-  # 但只清 remi：`dnf clean all` 会把 baseos/appstream/epel 一起清掉，
-  # 接着 makecache 就得重下几十 MB —— 这就是"清理缓存并重新拉元数据"很慢的原因。
+  # 换了源必须让 dnf 重新拉元数据，否则它还拿着旧 baseurl 的结果。
+  #
+  # 关键教训：**不要用 `dnf clean metadata`**。它不理会 --disablerepo/--enablerepo
+  # 的作用域，会去遍历所有仓库；metalink 形态的（epel / epel-next / centos.repo）
+  # 还要先把 metalink 解析一遍才知道缓存在哪 —— 实测这一步就花掉 41s，
+  # 而它做的只是清本地文件，本来不该联网。
+  #
+  # 正确做法是 `makecache --refresh`：同样强制重拉，但**只碰作用域内的仓库**。
   REPO_READY=""; META_READY=""; CAND_SUFFIX=""; CAND_VALUE=""; NET_CHECKED=""
   build_repo_args 2>/dev/null || true
 
   if [ ${#PROBE_ARGS[@]} -gt 0 ]; then
-    PROBE_LABEL="清理 remi 旧缓存"
-    run_probe 60 "$PM" "${RO_OPTS[@]}" -q "${PROBE_ARGS[@]}" clean metadata >/dev/null
     PROBE_LABEL="重新拉取 remi 元数据"
-    run_probe "$PROBE_LIMIT" "$PM" "${RO_OPTS[@]}" -q "${PROBE_ARGS[@]}" makecache >/dev/null \
+    run_probe "$PROBE_LIMIT" "$PM" "${RO_OPTS[@]}" -q "${PROBE_ARGS[@]}" makecache --refresh >/dev/null \
       && ok "元数据就绪（用时 ${PROBE_ELAPSED}s）" \
-      || warn "makecache 未完成，可稍后手动: $PM makecache"
+      || warn "makecache 未完成，可稍后手动: $PM makecache --refresh"
   else
-    warn "没识别出 remi 仓库，只能全量刷新（会比较慢）"
-    PROBE_LABEL="全量刷新元数据"
-    run_probe "$PROBE_LIMIT" "$PM" -q makecache >/dev/null \
-      && ok "元数据就绪" || warn "makecache 未完成"
+    # 没识别出 remi 仓库，退回通用作用域（仍只刷 PHP 需要的仓库，不是全量）
+    if build_scope_args; then
+      local -a s=("${SCOPE_ARGS[@]}")
+      PROBE_LABEL="刷新元数据（remi 未识别，按通用作用域）"
+      run_probe "$PROBE_LIMIT" "$PM" "${RO_OPTS[@]}" -q makecache --refresh "${s[@]}" >/dev/null \
+        && ok "元数据就绪（用时 ${PROBE_ELAPSED}s）" || warn "makecache 未完成"
+    else
+      warn "拿不到仓库列表，只能全量刷新（会比较慢）"
+      PROBE_LABEL="全量刷新元数据"
+      run_probe "$PROBE_LIMIT" "$PM" -q makecache --refresh >/dev/null \
+        && ok "元数据就绪" || warn "makecache 未完成"
+    fi
   fi
   PROBE_LABEL=""
   return 0
@@ -729,9 +1084,9 @@ sys_epel_label() {
   case "$1" in
     tuna)   printf '清华 TUNA（mirrors.tuna.tsinghua.edu.cn/epel）' ;;
     ustc)   printf '中科大 USTC（mirrors.ustc.edu.cn/epel）' ;;
-    aliyun) printf '阿里云（mirrors.aliyun.com/epel，实测最快）' ;;
+    aliyun) printf '阿里云（mirrors.aliyun.com/epel）' ;;
     huawei) printf '华为云（mirrors.huaweicloud.com/epel）' ;;
-    official) printf '官方 metalink（mirrors.fedoraproject.org，国内很慢）' ;;
+    official) printf '官方 metalink（mirrors.fedoraproject.org，由 dnf 自选节点）' ;;
     custom:*) printf '自定义（%s）' "${1#custom:}" ;;
     unknown)  printf '未识别（没装 EPEL？）' ;;
   esac
@@ -766,21 +1121,74 @@ sys_os_label() {
 
 # ── 通用：从 repo 文件里提取当前使用的镜像主机（不联网）────────────────
 # $1 = 通配的 repo 文件列表（已展开）
+#
+# 重要：只统计 baseurl，不把 metalink/mirrorlist 混进来。原因是实测踩过的：
+#   CentOS-Stream-BaseOS.repo  baseurl=http://mirrors.tencentyun.com/...   ← 真正生效
+#   centos.repo                 metalink=https://mirrors.centos.org/...    ← 重复定义但同 id
+# 两个文件都定义了 [baseos]，dnf 只会用其中一个；把 metalink 也算进来会
+# 得出 "custom:mirrors.centos.org" 这种误导性结论。
 detect_host() {
   local files="$1" h
-  h=$(grep -hE '^[[:space:]]*(baseurl|mirrorlist|metalink)[[:space:]]*=' $files 2>/dev/null \
-        | grep -viE 'download\.example|localhost' \
-        | sed -E 's#^[^=]*=[[:space:]]*https?://([^/]+).*#\1#' \
+  # 只统计**生效的** baseurl —— 不能把 enabled=0 的也算进来。
+  # 实测踩过：CentOS-Stream-Sources.repo 里 7 条 baseurl 都指向 vault.centos.org
+  # （全是 Source 段、enabled=0），按"出现次数最多"算就把真正生效的 USTC 盖掉了，
+  # 菜单顶部一直显示"自定义（vault.centos.org）"。
+  h=$(awk '
+        # 关键：baseurl 常写在 enabled 之前（实测 CentOS-Stream-Sources.repo 就是
+        # baseurl 在第 5 行、enabled=0 在第 7 行），所以不能边读边判 ——
+        # 必须把整个 section 缓冲下来，段末才知道最终 enabled 值再决定要不要统计。
+        function flush() {
+          if (en == "1" && bu != "") print bu
+          bu=""
+        }
+        /^[[:space:]]*\[/ { flush(); en="1"; bu=""; next }
+        /^[[:space:]]*enabled[[:space:]]*=/ {
+          v=$0; sub(/^[^=]*=[[:space:]]*/,"",v); gsub(/[[:space:]]+$/,"",v)
+          en=v; next
+        }
+        /^[[:space:]]*baseurl[[:space:]]*=/ {
+          line=$0; sub(/^[^=]*=[[:space:]]*/,"",line)
+          if (line ~ /^https?:\/\//) bu=line
+        }
+        END { flush() }
+      ' $files 2>/dev/null \
+        | grep -viE 'download\.example|localhost|file://' \
+        | sed -E 's#^https?://([^/]+).*#\1#' \
         | grep -v '^$' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+  if [ -z "$h" ]; then
+    # 全是 metalink/mirrorlist 形态，退而求其次看这两个（同样只看 enabled）
+    h=$(awk '
+          function flush() {
+            if (en == "1" && ml != "") print ml
+            ml=""
+          }
+          /^[[:space:]]*\[/ { flush(); en="1"; ml=""; next }
+          /^[[:space:]]*enabled[[:space:]]*=/ {
+            v=$0; sub(/^[^=]*=[[:space:]]*/,"",v); gsub(/[[:space:]]+$/,"",v)
+            en=v; next
+          }
+          /^[[:space:]]*(metalink|mirrorlist)[[:space:]]*=/ {
+            line=$0; sub(/^[^=]*=[[:space:]]*/,"",line)
+            if (line ~ /^https?:\/\//) ml=line
+          }
+          END { flush() }
+        ' $files 2>/dev/null \
+        | grep -viE 'download\.example|localhost' \
+        | sed -E 's#^https?://([^/?]+).*#\1#' \
+        | grep -v '^$' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+  fi
   [ -n "$h" ] || { printf 'unknown'; return 0; }
   case "$h" in
     mirrors.fedoraproject.org)   printf 'official' ;;
+    mirrors.centos.org)          printf 'official' ;;
     mirrorlist.centos.org)       printf 'official' ;;
+    mirror.centos.org)           printf 'official' ;;
     mirrors.tuna.tsinghua.edu.cn) printf 'tuna' ;;
     mirrors.ustc.edu.cn)         printf 'ustc' ;;
     mirrors.aliyun.com)          printf 'aliyun' ;;
     mirrors.huaweicloud.com)     printf 'huawei' ;;
     mirrors.tencentyun.com)      printf 'tencent' ;;
+    mirrors.cloud.tencent.com)   printf 'tencent' ;;
     *)                           printf 'custom:%s' "$h" ;;
   esac
 }
@@ -954,11 +1362,17 @@ apply_os_mirror() {
     return 0
   fi
 
-  # 只处理 enabled=1 且真正在用的：baseos / appstream / crb
+  # 只处理官方源本体：baseos / appstream / crb。
   # （Sources/Debuginfo/PowerTools 默认 enabled=0，改了也没意义，还会写坏 $basearch 变量）
-  files=$(grep -lE '^[[:space:]]*baseurl[[:space:]]*=.*(centos-stream|\$contentdir)' \
-            /etc/yum.repos.d/*.repo 2>/dev/null)
-  [ -n "$files" ] || die "没找到用 baseurl 的 CentOS 官方 repo 文件"
+  #
+  # 两种形态都要覆盖，实测两种同时存在且定义了相同的 [section]：
+  #   CentOS-Stream-BaseOS.repo  baseurl=http://mirrors.tencentyun.com/$contentdir/...
+  #   centos.repo                 metalink=https://mirrors.centos.org/metalink?repo=centos-baseos-...
+  # 只改其中一边的话，"listed more than once" 依旧存在，所以两边都收。
+  files=$(grep -lE '^[[:space:]]*(baseurl|metalink|mirrorlist)[[:space:]]*=' \
+            /etc/yum.repos.d/centos*.repo /etc/yum.repos.d/CentOS*.repo 2>/dev/null \
+          | grep -vE 'Sources|Debuginfo|PowerTools|Media|HighAvailability|RealTime|ResilientStorage')
+  [ -n "$files" ] || die "没找到 CentOS 官方源 repo 文件（/etc/yum.repos.d/centos*.repo）"
 
   probe_url "$desc" "${base}/BaseOS/x86_64/os/repodata/repomd.xml" \
     || die "$desc 不可达，先解决网络再切换"
@@ -969,19 +1383,100 @@ apply_os_mirror() {
   ok "原配置已备份到 $BACKUP_DIR"
 
   for f in $files; do
-    # 官方源和 remi 一样：只换 scheme+host，路径原样保留（$contentdir/$stream 也在路径里）
-    sed -i -E \
-      -e 's|^([[:space:]]*)#([[:space:]]*baseurl[[:space:]]*=)|\1\2|' \
-      -e 's|^([[:space:]]*)#([[:space:]]*mirrorlist[[:space:]]*=)|\1\2|' \
-      -e "s|^([[:space:]]*(baseurl|mirrorlist)[[:space:]]*=)[[:space:]]*https?://[^/[:space:]]+(/centos-stream)?/|\1${base}/|" \
-      -e 's|^([[:space:]]*mirrorlist[[:space:]]*=)|\1#|' \
-      "$f"
+    local fchanged=0
 
-    if ! grep -qE "^[[:space:]]*baseurl[[:space:]]*=[[:space:]]*${base}/" "$f"; then
+    # ── 形态 A：已有 baseurl（如 CentOS-Stream-BaseOS.repo）
+    # 只换 scheme+host，路径里的 $contentdir / $stream / $basearch 全部原样保留。
+    # 千万别把路径也拼上 centos-stream/9-stream —— $contentdir 本身就是
+    # "centos-stream/9-stream"，拼上去会变成
+    #   .../centos-stream/9-stream/$contentdir/$stream/BaseOS/...  → 404
+    if grep -qE '^[[:space:]]*baseurl[[:space:]]*=' "$f"; then
+      sed -i -E \
+        -e 's|^([[:space:]]*)#([[:space:]]*baseurl[[:space:]]*=)|\1\2|' \
+        -e "s|^([[:space:]]*baseurl[[:space:]]*=)[[:space:]]*https?://[^/[:space:]]+/|\1https://${SYS_OS_HOST}/|" \
+        "$f"
+      fchanged=1
+      # baseurl 已生效，才注释 mirrorlist（避免两条源并存）
+      sed -i -E 's|^([[:space:]]*)mirrorlist[[:space:]]*=|\1#mirrorlist=|' "$f"
+      # 再按 section 校正路径：只换 host 修不好上次写错的路径
+      repair_os_paths "$f" && fchanged=1
+    fi
+
+    # ── 形态 B：只有 metalink/mirrorlist（如 centos.repo）
+    # 注释掉 metalink，并按 section 语义写入对应 baseurl。
+    # 不这么做的后果：centos.repo 和 CentOS-Stream-*.repo 继续重复定义
+    # [baseos]，dnf 每次都刷 "Repository baseos is listed more than once"。
+    if grep -qE '^[[:space:]]*(metalink|mirrorlist)[[:space:]]*=' "$f"; then
+      local had_ml=0
+      grep -qE '^[[:space:]]*metalink[[:space:]]*=' "$f" && had_ml=1
+      # 先从 metalink 的 repo= 参数推断 section 用途，写出正确的路径
+      local tmp="$f.phpup.$$" sec="" sub="" line
+      : > "$tmp"
+      while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+          \#*) printf '%s\n' "$line" >> "$tmp"; continue ;;
+        esac
+        case "$line" in
+          \[*)
+            sec=$(printf '%s' "$line" | tr -d '[:space:]')
+            printf '%s\n' "$line" >> "$tmp"
+            continue ;;
+        esac
+        # 记录 metalink 里 repo=centos-<name>-$stream 的中间段，用来还原目录名
+        if printf '%s' "$line" | grep -qE '^[[:space:]]*(metalink|mirrorlist)[[:space:]]*='; then
+          # 从 repo=centos-<name>-$stream 里取 <name>。
+          # 两个坑：
+          #  1) 别用 sed 贪婪匹配 '.*repo=([a-z]+)-...'，它只会吃到 "centos" 就停；
+          #  2) grep -oE 'repo=centos-[a-z]+' 对 "centos-baseos-debug" 只匹配到
+          #     "centos-baseos"，会漏掉 -debug/-source 后缀，导致 debug 段被当成
+          #     baseos 处理、写进 BaseOS 的 baseurl —— 那是错的（source 段会拉到二进制包）。
+          # 所以先看有没有 -debug/-source 后缀，有就不碰这个 section。
+          case "$line" in
+            *repo=centos-*-debug-*|*repo=centos-*-source-*)
+              # enabled=0 的调试/源码段：原样保留 metalink，不动
+              printf '%s\n' "$line" >> "$tmp"
+              continue ;;
+          esac
+          # 取 repo=centos-<段>-$stream 的完整 <段>。必须能拿到含连字符的名字：
+          # `centos-extras-sig-extras-common-$stream` 的 <段> 是 `extras-sig-extras-common`，
+          # 用 grep -oE 'repo=centos-[a-z]+' 只会吃到 "extras" 就停，
+          # 于是拼出 .../extras/x86_64/os/ —— 那条 404（实测四个镜像全 404）。
+          sub=$(printf '%s' "$line" | sed -nE 's/.*repo=centos-(.*)-[$]stream.*/\1/p')
+          case "$sub" in
+            baseos|appstream|crb|highavailability|nfv|rt|resilientstorage|extras-common|extras-sig-extras-common)
+              printf '#%s\n' "$line" >> "$tmp"
+              printf 'baseurl=https://%s/centos-stream/%s\n' "$SYS_OS_HOST" \
+                "$(os_repo_path "$sub")" >> "$tmp"
+              fchanged=1 ;;
+            *)
+              # debug / source / debuginfo：enabled=0，原样保留 metalink，不碰。
+              printf '%s\n' "$line" >> "$tmp" ;;
+          esac
+          sub=""
+          continue
+        fi
+        printf '%s\n' "$line" >> "$tmp"
+      done < "$f"
+      mv "$tmp" "$f" 2>/dev/null || { rm -f "$tmp"; die "写入 $f 失败"; }
+      [ "$had_ml" = 1 ] || true
+    fi
+
+    if [ "$fchanged" = 0 ]; then
+      warn "$(basename "$f") 没有可改的 baseurl/metalalink，跳过（未改动）"
+      continue
+    fi
+
+    # 安全网：处理完必须还有生效的源，且必须指向目标镜像
+    if ! grep -qE '^[[:space:]]*(baseurl|metalink|mirrorlist)[[:space:]]*=' "$f"; then
       cp -a "$BACKUP_DIR/$(basename "$f")" "$f"
-      bad "$(basename "$f") 的 baseurl 没换成 $base ，已从备份还原，仓库配置未改动"
+      bad "$(basename "$f") 改写后没有任何生效源，已从备份还原"
+      die "仓库配置未改动"
+    fi
+    if ! grep -qE "^[[:space:]]*baseurl[[:space:]]*=[[:space:]]*https://${SYS_OS_HOST}/" "$f"; then
+      cp -a "$BACKUP_DIR/$(basename "$f")" "$f"
+      bad "$(basename "$f") 的 baseurl 没换成 $SYS_OS_HOST ，已从备份还原，仓库配置未改动"
       warn "它原本长这样（发我我按实际格式调）："
-      grep -E '^[[:space:]]*#?[[:space:]]*baseurl[[:space:]]*=' "$BACKUP_DIR/$(basename "$f")" | sed 's/^/      /'
+      grep -E '^[[:space:]]*#?[[:space:]]*(baseurl|metalink)[[:space:]]*=' "$BACKUP_DIR/$(basename "$f")" | sed 's/^/      /'
       die "这是地址格式没匹配上，不是网络问题"
     fi
 
@@ -993,19 +1488,110 @@ apply_os_mirror() {
   return 0
 }
 
-# 换完系统源后刷新缓存。只清这些源，不要 clean all
+# 换完系统源后刷新缓存。只刷这些源，不要全量。
+#
+# 关键：makecache 必须加仓库作用域（--disablerepo + --enablerepo），
+# 否则 dnf 会把全部 enabled 仓库的元数据都拉一遍。除了刚换的 baseos/appstream/crb，
+# 还有 Aeris(~6 kB/s)、ELRepo、epel-next、腾讯云源… 每次换源都白等一两分钟。
+#
+# 另外同样不能用 `dnf clean metadata` 打头（见 apply_mirror 里的说明）：
+# 它不看作用域，会去解析所有 metalink 仓库，实测白等 41s。用 --refresh 代替。
+# 这跟上面 refresh_meta 处理 remi 的做法是同一个道理。
 refresh_sys_meta() {
   REPO_READY=""; META_READY=""; CAND_SUFFIX=""; CAND_VALUE=""
-  if [ ${#RO_OPTS[@]} -gt 0 ]; then
-    PROBE_LABEL="刷新系统源元数据"
-    run_probe 120 "$PM" "${RO_OPTS[@]}" -q clean metadata >/dev/null
-    PROBE_LABEL="重新拉取系统源元数据"
-    run_probe "$PROBE_LIMIT" "$PM" "${RO_OPTS[@]}" -q makecache >/dev/null \
-      && ok "元数据就绪（用时 ${PROBE_ELAPSED}s）" \
-      || warn "makecache 未完成，可稍后手动: $PM makecache"
+  [ ${#RO_OPTS[@]} -gt 0 ] || return 0
+
+  local -a scope
+  build_scope_args || {
+    warn "拿不到仓库列表（repolist 超时），跳过元数据刷新，避免盲等"
+    return 0
+  }
+  scope=("${SCOPE_ARGS[@]}")
+
+  PROBE_LABEL="重新拉取系统源元数据"
+  # 别把 stderr 丢掉 —— 之前失败只说"makecache 未完成（4s）"，
+  # 用户根本看不出是 URL 404、仓库名不认还是网络问题（实测反馈）。
+  # 几秒就失败是配置错误不是网络慢，必须把原因打出来。
+  local mc_rc=0
+  run_probe "$PROBE_LIMIT" "$PM" "${RO_OPTS[@]}" -q makecache --refresh "${scope[@]}" >/dev/null || mc_rc=$?
+  if [ "$mc_rc" -eq 0 ]; then
+    ok "元数据就绪（用时 ${PROBE_ELAPSED}s，只刷新 PHP 需要的仓库）"
+  else
+    warn "makecache 未完成（${PROBE_ELAPSED}s，rc=$mc_rc）"
+    if [ "$PROBE_ELAPSED" -lt 5 ]; then
+      warn "${C_Y}几秒就失败 = 配置问题（不是网络慢）${C_N}，常见原因："
+      warn "  1) 某个 baseurl 404（换源时路径拼错）→ 用菜单 5 重新换一次源"
+      warn "  2) 仓库 id 不被 dnf 认可（下面若出现 No repository match）"
+      warn "  3) repo 文件被改坏 → 从 $BACKUP_ROOT 恢复"
+    else
+      warn "链路太慢，可稍后手动: $PM makecache --refresh"
+    fi
+    if [ -n "$PROBE_ERR" ]; then
+      log "  ${C_D}--- dnf 报错（前 12 行）---${C_N}"
+      printf '%s\n' "$PROBE_ERR" | sed 's/^/    /' | head -12
+      log "  ${C_D}---${C_N}"
+    fi
   fi
   PROBE_LABEL=""
   return 0
+}
+
+# CentOS Stream 9 各仓库在镜像站上的**真实**目录结构。
+# 实测踩过的坑：extras-common 不在 9-stream/ 下，而在 SIGs/ 下，且结尾不是 /os/：
+#   正常仓库  .../centos-stream/9-stream/CRB/x86_64/os/
+#   SIGs 仓库 .../centos-stream/SIGs/9-stream/extras/x86_64/extras-common/
+# 拼错就 404，dnf 的 makecache 会秒失败。
+os_repo_path() {
+  local a="${BASEARCH:-x86_64}"
+  case "$1" in
+    baseos)               printf '%s-stream/BaseOS/%s/os/'           "${EL_MAJOR}" "$a" ;;
+    appstream)            printf '%s-stream/AppStream/%s/os/'        "${EL_MAJOR}" "$a" ;;
+    crb)                  printf '%s-stream/CRB/%s/os/'              "${EL_MAJOR}" "$a" ;;
+    highavailability)     printf '%s-stream/HighAvailability/%s/os/' "${EL_MAJOR}" "$a" ;;
+    nfv)                  printf '%s-stream/NFV/%s/os/'              "${EL_MAJOR}" "$a" ;;
+    rt)                   printf '%s-stream/RT/%s/os/'               "${EL_MAJOR}" "$a" ;;
+    resilientstorage)     printf '%s-stream/ResilientStorage/%s/os/' "${EL_MAJOR}" "$a" ;;
+    # 注意两个名字指同一个仓库：section 名是 extras-common，
+    # 而 metalink 里的段名是 extras-sig-extras-common。
+    # 只认一个就会漏（实测：repair 静默不修，坏路径一直留着）。
+    extras-common|extras-sig-extras-common)
+      printf 'SIGs/%s-stream/extras/%s/extras-common/' "${EL_MAJOR}" "$a" ;;
+    *) return 1 ;;
+  esac
+}
+
+# 按 section 校正 baseurl 路径。
+#
+# 为什么必须有这一步：baseurl 形态的换源只换 host、不换路径（因为路径里可能有
+# $contentdir/$stream 这类 dnf 变量）。如果上次换源把路径拼错了（实测 extras-common
+# 被拼成 .../9-stream/extras/x86_64/os/，四个镜像全 404），坏路径会一直留在文件里，
+# 再换一次源也修不好 —— 因为只换了 host。这里按 section 重写成规范路径。
+#
+# 只处理 os_repo_path 认识的 section；debug/source 等不认识的原样保留。
+repair_os_paths() {   # $1=file；有改动返回 0
+  local f=$1 tmp="$1.phpup.$$" sec="" line p changed=0
+  : > "$tmp"
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      \[*)
+        sec=$(printf '%s' "$line" | tr -d '[:space:]')
+        sec=${sec#\[}; sec=${sec%\]} ;;
+    esac
+    if [ -n "$sec" ] && p=$(os_repo_path "$sec"); then
+      if printf '%s' "$line" | grep -qE '^[[:space:]]*baseurl[[:space:]]*='; then
+        printf 'baseurl=https://%s/centos-stream/%s\n' "$SYS_OS_HOST" "$p" >> "$tmp"
+        changed=1
+        continue
+      fi
+    fi
+    printf '%s\n' "$line" >> "$tmp"
+  done < "$f"
+  if [ "$changed" = 1 ]; then
+    mv "$tmp" "$f"
+    return 0
+  fi
+  rm -f "$tmp"
+  return 1
 }
 
 # ── 重复 repo 检测 ─────────────────────────────────────────────────────
@@ -1032,6 +1618,156 @@ find_duplicate_repos() {
   return 0
 }
 
+# 收集 (section, 文件, enabled) 三元组，供去重逻辑用。
+# 为什么要带 enabled：同一个 [baseos] 可能一份 enabled=1、一份 enabled=0，
+# 必须保留 enabled=1 的那份，否则去重等于把仓库关掉了。
+collect_repo_sections() {
+  local f
+  for f in /etc/yum.repos.d/*.repo; do
+    [ -f "$f" ] || continue
+    awk -v F="$f" '
+      function emit() { if (cur != "") print cur "\t" F "\t" en }
+      /^[[:space:]]*\[/ {
+        emit()
+        n=$0
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", n)
+        gsub(/^\[/, "", n); gsub(/\]$/, "", n)
+        cur=n; en="1"
+        next
+      }
+      /^[[:space:]]*enabled[[:space:]]*=/ {
+        v=$0; sub(/^[^=]*=[[:space:]]*/, "", v); gsub(/[[:space:]]+$/, "", v)
+        en=v
+      }
+      END { emit() }
+    ' "$f"
+  done 2>/dev/null
+}
+
+# 把某个文件里指定 section 的整段注释掉（段头 + 段内所有行）。
+comment_out_section() {   # $1=file $2=section
+  local f=$1 sec=$2 tmp="$1.phpup.$$"
+  awk -v sec="$sec" '
+    BEGIN { inb=0 }
+    /^[[:space:]]*\[/ {
+      n=$0
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", n)
+      gsub(/^\[/, "", n); gsub(/\]$/, "", n)
+      if (inb) inb=0
+      if (n == sec) { inb=1; print "#" $0; next }
+    }
+    { if (inb) print "#" $0; else print $0 }
+  ' "$f" > "$tmp" && mv "$tmp" "$f"
+}
+
+# ── 自动去重 ─────────────────────────────────────────────────────────
+# 同名 [section] 被多个文件定义时，dnf 只认解析到的那一个，另一个白白污染
+# 输出（"listed more than once"）。这里自动把多余的那份整段注释掉。
+#
+# 为什么是"注释"而不是"删文件"：
+#   · 一个文件里往往既有重复 section 也有独有 section，整文件 mv 会误伤
+#   · 注释可逆，配合备份可随时还原
+#
+# 保留规则（确定性、可解释）：
+#   1) 优先在 enabled=1 的定义里挑 —— 否则等于把仓库关掉
+#   2) 若全部 enabled=0，照样要去重：dnf 的 "listed more than once"
+#      是在**解析配置**时报的，跟 enabled 无关，留着警告就不会消失
+#   3) 文件名包含 section 名的优先（baseos -> CentOS-Stream-BaseOS.repo）
+#   4) 都不符合就保留字典序第一个，与 dnf 的解析顺序一致
+fix_duplicate_repos() {
+  local pairs dup_total=0 fixed=0 skipped=0
+  pairs=$(collect_repo_sections)
+  [ -n "$pairs" ] || return 1
+
+  # 只挑出"同一 section 出现多次"的组
+  local dups
+  dups=$(printf '%s\n' "$pairs" | awk -F'\t' '
+    { cnt[$1]++; rows[$1]=rows[$1] $0 "\n" }
+    END { for (s in cnt) if (cnt[s] > 1) printf "%s", rows[s] }
+  ')
+  [ -n "$dups" ] || return 1
+
+  BACKUP_DIR="$BACKUP_ROOT/dup-repo-$TS"
+  mkdir -p "$BACKUP_DIR"
+
+  # 逐个 section 决定谁留下
+  local sections s
+  sections=$(printf '%s\n' "$dups" | awk -F'\t' '{print $1}' | sort -u)
+  for s in $sections; do
+    dup_total=$((dup_total + 1))
+    local group keeper="" loser_list=""
+    group=$(printf '%s\n' "$dups" | awk -F'\t' -v want="$s" '$1==want')
+
+    # 1) 优先在 enabled=1 的里挑；全 enabled=0 就退回整组（仍要消警告）
+    local pool
+    pool=$(printf '%s\n' "$group" | awk -F'\t' '$3=="1"')
+    [ -n "$pool" ] || pool="$group"
+
+    # 2) 文件名包含 section 名的优先
+    local row f
+    while IFS=$(printf '\t') read -r _ f _; do
+      [ -n "$f" ] || continue
+      local base; base=$(basename "$f" .repo | tr '[:upper:]' '[:lower:]')
+      if [ -z "$keeper" ] && printf '%s' "$base" | grep -qF "$s"; then
+        keeper="$f"
+      fi
+    done <<EOF
+$pool
+EOF
+
+    # 3) 兜底：字典序第一个
+    if [ -z "$keeper" ]; then
+      keeper=$(printf '%s\n' "$pool" | awk -F'\t' '{print $2}' | sort | head -1)
+    fi
+
+    while IFS=$(printf '\t') read -r _ f _; do
+      [ -n "$f" ] || continue
+      [ "$f" = "$keeper" ] && continue
+      loser_list="$loser_list $f"
+    done <<EOF
+$pool
+EOF
+
+    [ -n "$loser_list" ] || continue
+
+    # 备份涉及的文件（只备份一次）
+    for f in $keeper $loser_list; do
+      [ -f "$BACKUP_DIR/$(basename "$f")" ] || cp -a "$f" "$BACKUP_DIR/" 2>/dev/null || true
+    done
+
+    for f in $loser_list; do
+      comment_out_section "$f" "$s"
+      # 安全网：注释后该 section 在这个文件里必须没有生效的源了
+      if awk -v sec="$s" '
+        BEGIN{inb=0; bad=0}
+        /^[[:space:]]*\[/ {
+          n=$0; gsub(/^[[:space:]]+|[[:space:]]+$/,"",n); gsub(/^\[/,"",n); gsub(/\]$/,"",n)
+          if (inb) inb=0
+          if (n==sec) inb=1
+        }
+        inb && /^[[:space:]]*(baseurl|metalink|mirrorlist)[[:space:]]*=/ { bad=1 }
+        END{exit bad}
+      ' "$f"; then
+        fixed=$((fixed + 1))
+        ok "[$s] 保留 $(basename "$keeper")，已注释 $(basename "$f")"
+      else
+        cp -a "$BACKUP_DIR/$(basename "$f")" "$f" 2>/dev/null || true
+        bad "[$s] 注释 $(basename "$f") 后仍有生效源，已从备份还原"
+        skipped=$((skipped + 1))
+      fi
+    done
+  done
+
+  log ""
+  if [ "$fixed" -gt 0 ]; then
+    ok "去重完成：处理 $fixed 处重复定义${skipped:+（跳过 $skipped 处）}"
+    log "  ${C_D}备份在 $BACKUP_DIR，还原: cp -a $BACKUP_DIR/*.repo /etc/yum.repos.d/${C_N}"
+  else
+    info "没有需要处理的重复定义"
+  fi
+  return 0
+}
+
 # ===========================================================================
 #  系统源体检：哪些源在拖后腿（这是"为啥这么慢"的直接答案）
 # ===========================================================================
@@ -1045,57 +1781,145 @@ audit_sys_repos() {
   fi
 
   # 列出所有 enabled 的仓库，逐个测速。超时设 6s，慢源会明显暴露。
-  local ids
-  ids=$(timeout 30 "$PM" "${RO_OPTS[@]}" repolist --enabled 2>/dev/null | awk 'NR>1 {print $1}')
-  if [ -z "$ids" ]; then
+  #
+  # repolist 的输出格式是 "repo id  repo name  status" 三列，第一行是表头。
+  # 之前用 `awk 'NR>1 {print $1}'` 只跳 1 行，若 dnf 额外打了
+  # "Last metadata expiration check..." 这类行，表头就会被当成 repo id 抓进来，
+  # 而真正的 baseos/appstream 反而被挤掉 —— 结果"所有仓库 < 1s"的结论建立在
+  # 不完整的数据上。改成按内容过滤：只保留出现在 repo 文件里的 id。
+  local ids all_ids id
+  all_ids=$(timeout 30 "$PM" "${RO_OPTS[@]}" repolist --enabled 2>/dev/null \
+              | awk 'NF>=2 && $1 ~ /^[A-Za-z0-9][A-Za-z0-9._-]*$/ { print $1 }' | sort -u)
+  if [ -z "$all_ids" ]; then
     warn "拿不到仓库列表（repolist 超时）"
     return 0
   fi
 
+  # 只测在 repo 文件里真实存在的 section，把表头/杂行挡在外面
+  ids=""
+  for id in $all_ids; do
+    grep -lqE "^[[:space:]]*\[${id}\][[:space:]]*$" /etc/yum.repos.d/*.repo 2>/dev/null && ids="$ids $id"
+  done
+  ids=${ids# }
+  if [ -z "$ids" ]; then
+    warn "repolist 返回的 id 都没在 repo 文件里找到对应 section，无法测速"
+    return 0
+  fi
+
+  local total skipped=0 probed=0
+  total=$(printf '%s\n' $ids | grep -c .)
   info "逐个探测 repomd.xml 响应时间（超过 1s 就会明显拖慢 dnf）"
+  log "  ${C_D}共 $total 个 enabled 仓库${C_N}"
   log ""
-  local slow="" id url n
+  local slow="" url kind
+
+  # 取某个 repo id 的源地址。两种形态都要处理：
+  #   baseurl=  → 直接拼 repomd.xml
+  #   metalink= → 先解析 metalink 拿真实 mirror 列表，再取其中一个测速。
+  #               之前只认baseurl，导致 EPEL（默认 metalink）直接被 continue 跳过，
+  #               体检报告里永远看不到它 —— 而它恰恰是最慢的那个。
   for id in $ids; do
+    url=""
+    kind=""
+
+    # baseurl 形态：多个文件可能重复定义同名 section，只取第一个生效的。
+    # 段头匹配要容忍尾随空格/制表符（真实文件里 [baseos] 后面常带空白）。
     url=$(awk -v want="$id" '
-      $0 ~ "^\\[" want "\\]$" { inb=1; next }
-      /^\[/ { inb=0 }
+      {
+        h=$0
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", h)
+        if (h == "[" want "]") { inb=1; next }
+        if (h ~ /^\[/) inb=0
+      }
       inb && /^[[:space:]]*baseurl[[:space:]]*=/ {
         sub(/^[^=]*=[[:space:]]*/, ""); print; exit }
     ' /etc/yum.repos.d/*.repo 2>/dev/null | head -1)
-    [ -n "$url" ] || continue
-    url="${url%/}/repodata/repomd.xml"
-    # 把 dnf 变量展开
+
+    if [ -n "$url" ]; then
+      kind="baseurl"
+      url="${url%/}/repodata/repomd.xml"
+    else
+      # metalink 形态：metalink 本身不是仓库地址，得先解析它
+      local ml
+      ml=$(awk -v want="$id" '
+        {
+          h=$0
+          gsub(/^[[:space:]]+|[[:space:]]+$/, "", h)
+          if (h == "[" want "]") { inb=1; next }
+          if (h ~ /^\[/) inb=0
+        }
+        inb && /^[[:space:]]*metalink[[:space:]]*=/ {
+          sub(/^[^=]*=[[:space:]]*/, ""); print; exit }
+      ' /etc/yum.repos.d/*.repo 2>/dev/null | head -1)
+
+      if [ -n "$ml" ]; then
+        kind="metalink"
+        # metalink 的真实结构（Fedora mirrors，metalink 3.0）：
+        #   <url protocol="https" type="https" location="US" preference="40">https://.../repomd.xml</url>
+        # 地址是**元素文本**，不是 href 属性 —— 只有老式 mirrorlist 才用 href。
+        # 这里抓 https 的最高 preference 那条（dnf 也是这么挑的）。
+        url=$(curl -fsS --connect-timeout 3 --max-time 8 \
+                "$(printf '%s' "$ml" | sed -e "s/\$basearch/$(rpm -E '%{_arch}' 2>/dev/null || echo x86_64)/g" \
+                                                      -e "s/\$releasever/${EL_MAJOR}/g" \
+                                                      -e "s/\$infra/x86_64/g" -e "s/\$contentdir/centos-stream/g")" \
+              2>/dev/null \
+              | grep -oE '<url protocol="https"[^>]*>[^<]+</url>' \
+              | head -1 | sed -E 's/.*>([^<]+)<.*/\1/')
+        [ -n "$url" ] && url="${url%/}"
+      fi
+    fi
+
+    if [ -z "$url" ]; then
+      skipped=$((skipped + 1))
+      log "  ${C_Y}?${C_N} $id   ${C_D}拿不到源地址（没有生效的 baseurl/metalink），跳过${C_N}"
+      continue
+    fi
+    # 把 dnf 变量展开（metalink 分支里部分变量已在上面展开过，这里兜底）
     url=$(printf '%s' "$url" | sed -e "s/\$basearch/$(rpm -E '%{_arch}' 2>/dev/null || echo x86_64)/g" \
                              -e "s/\$releasever/${EL_MAJOR}/g" -e "s/\$stream/${EL_MAJOR}-stream/g" \
                              -e "s|\$contentdir|centos-stream/${EL_MAJOR}-stream|g")
-    case "$url" in http://*|https://*) ;; *) continue ;; esac
+    case "$url" in http://*|https://*) ;; *)
+      skipped=$((skipped + 1))
+      log "  ${C_Y}?${C_N} $id   ${C_D}源地址不是 http(s)，跳过${C_N}"
+      continue ;;
+    esac
 
     if probe_url "$id" "$url" >/dev/null 2>&1; then
-      : # PROBE_LAST_T 已被 probe_url 填好
+      probed=$((probed + 1))
       if [ -n "$PROBE_LAST_T" ] && awk "BEGIN{exit !($PROBE_LAST_T > 1.0)}" 2>/dev/null; then
-        log "  ${C_Y}⚠${C_N} $id   ${PROBE_LAST_T}s  ${C_D}偏慢${C_N}"
+        log "  ${C_Y}⚠${C_N} $id   ${PROBE_LAST_T}s  ${C_D}偏慢（$kind）${C_N}"
         slow="$slow $id"
+      else
+        log "  ${C_G}✓${C_N} $id   ${PROBE_LAST_T}s  ${C_D}$kind${C_N}"
       fi
+    else
+      skipped=$((skipped + 1))
     fi
   done
 
   log ""
+  info "覆盖情况：实测 $probed 个 / 共 $total 个 enabled 仓库${skipped:+（跳过 $skipped 个）}"
   if [ -n "$slow" ]; then
     warn "这些源响应 >1s，dnf 会在这里耗掉大部分时间：$slow"
-    log "  ${C_D}EPEL 用了 metalink= 指向 mirrors.fedoraproject.org，国内通常最慢${C_N}"
-    log "  ${C_D}菜单 6 可切换 EPEL / 官方源${C_N}"
+    log "  ${C_D}上面每个仓库的耗时都是本机实测，不是估计值${C_N}"
+    log "  ${C_D}换 EPEL: 菜单 7；换官方源: 菜单 8（进入后会再实测一遍候选源）${C_N}"
+  elif [ "$probed" -eq "$total" ]; then
+    ok "所有仓库响应都 < 1s，元数据加载不会成为瓶颈"
   else
-    ok "所有仓库响应都< 1s，元数据加载不会成为瓶颈"
+    # 有仓库没测到就不下"全都不慢"的结论 —— 那是拿不完整数据骗人
+    warn "已测到的 $probed 个都 < 1s，但还有 $skipped 个没测到，不足以判断整体不慢"
+    log "  ${C_D}没测到的通常是缺 baseurl/metalink 或解析失败，建议手工确认它们是否需要${C_N}"
   fi
 
-  # 重复定义
+  # 重复定义：直接自动处理，不再让人手动 mv
   local dups
   if dups=$(find_duplicate_repos); then
     log ""
     warn "以下 repo id 被多个文件重复定义（dnf 会刷 'listed more than once'）:"
     printf '%s\n' "$dups"
-    log "  ${C_D}CentOS-Stream-*.repo 和 centos.repo 同时存在是常见原因；${C_N}"
-    log "  ${C_D}删掉旧的那份即可：mv CentOS-Stream-BaseOS.repo{,.bak}${C_N}"
+    log ""
+    info "自动去重：保留一份、把其余整段注释掉（会先备份到 $BACKUP_ROOT/dup-repo-$TS）"
+    fix_duplicate_repos
   fi
   return 0
 }
@@ -1126,32 +1950,38 @@ mirror_label() {
 }
 
 show_menu() {
-  local cur stream choice ver
+  local cur stream choice ver epelm osm
   cur=$(current_php_version)
   stream=$(enabled_php_stream)
+  epelm=$(current_epel_mirror)
+  osm=$(current_os_mirror)
 
   log ""
   log "=================================================================="
   log " ${C_B}PHP 升级工具${C_N}   $PRETTY_OS · $PM"
   log "------------------------------------------------------------------"
-  log " 当前 PHP : ${cur:-未安装}"
-  [ "$PM" = dnf ] && log " module   : ${stream:-<未启用>}"
-  [ "$PM" = dnf ] && log " Remi 源  : $(mirror_label "$(current_remi_mirror)")"
-  log " 版本升级目标 : ${C_B}PHP $TARGET${C_N}   （默认，可在下一步改）"
+  log " 当前 ${cur:-未安装}   module ${stream:-<未启用>}   目标 ${C_B}PHP $TARGET${C_N}"
+  log " ${C_B}Remi 源${C_N}  : $(mirror_label "$(current_remi_mirror)")"
+  log " ${C_B}EPEL 源${C_N}  : $(sys_epel_label "$epelm")"
+  log " ${C_B}官方源${C_N}   : $(sys_os_label "$osm")"
   log "=================================================================="
-  log "  1) 预演版本升级    换 minor（如 8.4 -> 8.5），只显示会改什么"
-  log "  2) 执行版本升级    换 minor，真正执行，会再确认一次"
-  log "  3) 安全补丁升级    只升 patch（如 8.5.11 -> 8.5.12），不动分支"
-  log "  4) 查看当前状态    版本 / stream / 包数量"
-  log "  5) 测源连通性      官方 / 清华 / 中科大，看哪个快"
-  log "  6) 切换 Remi 源    官方 / 清华 / 中科大"
-  log "  7) 参数说明"
+  log "  ${C_B}升级${C_N}"
+  log "  1) 执行升级         升到仓库最新（可换版本）"
+  log "  2) 预演升级         只看会改什么，不落地"
+  log "  3) 安全补丁         只升 patch，不动分支"
+  log ""
+  log "  ${C_B}源管理${C_N}"
+  log "  4) 切换源           Remi / EPEL / 官方，进入即实测"
+  log ""
+  log "  ${C_B}其他${C_N}"
+  log "  5) 当前状态"
+  log "  6) 参数说明"
   log "  0) 退出"
   log ""
 
   while :; do
     drain_input
-    printf "请选择 [0-7]: "
+    printf "请选择 [0-6]: "
     read -r choice || exit 1
     case "$choice" in
       '') continue ;;    # 空回车当刷新，别报错刷屏
@@ -1179,14 +2009,81 @@ show_menu() {
         return 0
         ;;
       3) MODE="security"; log ""; info "已选: 安全补丁升级（保持当前分支）"; return 0 ;;
-      4) MODE="status"; log ""; return 0 ;;
-      5) MODE="nettest"; log ""; return 0 ;;
-      6) MODE="mirror"; log ""; return 0 ;;
-      7) log ""; usage; log "" ;;
+      4) pick_source_kind || continue; return 0 ;;
+      5) MODE="status"; log ""; return 0 ;;
+      6) log ""; usage; log "" ;;
       0|q|Q) log "已退出"; exit 0 ;;
-      *) bad "请输入 0-7" ;;
+      *) bad "请输入 0-6" ;;
     esac
   done
+}
+
+
+# 切换源的二级菜单：三个源统一入口，进去各自会当场实测候选镜像。
+pick_source_kind() {
+  local c
+  log ""
+  log "  ${C_B}源管理${C_N}"
+  log "  1) 切换 Remi     当前 $(mirror_label "$(current_remi_mirror)")"
+  log "  2) 切换 EPEL     当前 $(sys_epel_label "$(current_epel_mirror)")"
+  log "  3) 切换官方源   当前 $(sys_os_label "$(current_os_mirror)")"
+  log "  4) 全面体检     逐个测速 + 查重复定义"
+  log "  0) 返回"
+  drain_input
+  printf "请选择 [0-4]: "
+  read -r c || return 1
+  case "$c" in
+    1) MODE="mirror";      log ""; return 0 ;;
+    2) MODE="mirror-epel"; log ""; return 0 ;;
+    3) MODE="mirror-os";   log ""; return 0 ;;
+    4) MODE="audit";       log ""; return 0 ;;
+    *) log "  已返回"; return 1 ;;
+  esac
+}
+
+# ── 各源现场测速展示（检测菜单和切换菜单共用）────────────────────────
+# 三处调用同一套 bench_*，保证"检测看到的数字"和"切换时看到的"完全一致。
+show_remi_bench() {
+  BENCH_KEYS=(); BENCH_TIMES=()
+  bench_one official "https://rpms.remirepo.net/enterprise/${EL_MAJOR}/safe/x86_64/repodata/repomd.xml"
+  bench_one tuna     "https://mirrors.tuna.tsinghua.edu.cn/remi/enterprise/${EL_MAJOR}/safe/x86_64/repodata/repomd.xml"
+  bench_one ustc     "https://mirrors.ustc.edu.cn/remi/enterprise/${EL_MAJOR}/safe/x86_64/repodata/repomd.xml"
+  log "  ${C_B}Remi 源（本机实测）${C_N}"
+  bench_menu_line 1 "官方   " official "rpms.remirepo.net" "$(current_remi_mirror)"
+  bench_menu_line 2 "清华   " tuna     "mirrors.tuna.tsinghua.edu.cn" "$(current_remi_mirror)"
+  bench_menu_line 3 "中科大 " ustc     "mirrors.ustc.edu.cn" "$(current_remi_mirror)"
+}
+
+show_epel_bench() {
+  BENCH_KEYS=(); BENCH_TIMES=()
+  bench_one official "https://mirrors.fedoraproject.org/metalink?repo=epel-${EL_MAJOR}&arch=x86_64"
+  bench_one tuna     "https://mirrors.tuna.tsinghua.edu.cn/epel/${EL_MAJOR}/Everything/x86_64/repodata/repomd.xml"
+  bench_one ustc     "https://mirrors.ustc.edu.cn/epel/${EL_MAJOR}/Everything/x86_64/repodata/repomd.xml"
+  bench_one aliyun   "https://mirrors.aliyun.com/epel/${EL_MAJOR}/Everything/x86_64/repodata/repomd.xml"
+  bench_one huawei   "https://mirrors.huaweicloud.com/epel/${EL_MAJOR}/Everything/x86_64/repodata/repomd.xml"
+  log "  ${C_B}EPEL 源（本机实测）${C_N}"
+  bench_menu_line 1 "官方   " official "mirrors.fedoraproject.org/metalink" "$(current_epel_mirror)"
+  bench_menu_line 2 "清华   " tuna     "mirrors.tuna.tsinghua.edu.cn/epel" "$(current_epel_mirror)"
+  bench_menu_line 3 "中科大 " ustc     "mirrors.ustc.edu.cn/epel" "$(current_epel_mirror)"
+  bench_menu_line 4 "阿里云 " aliyun   "mirrors.aliyun.com/epel" "$(current_epel_mirror)"
+  bench_menu_line 5 "华为云 " huawei   "mirrors.huaweicloud.com/epel" "$(current_epel_mirror)"
+}
+
+show_os_bench() {
+  BENCH_KEYS=(); BENCH_TIMES=()
+  bench_one tencent  "http://mirrors.tencentyun.com/centos/${EL_MAJOR}-stream/BaseOS/x86_64/os/repodata/repomd.xml"
+  bench_one tuna     "https://mirrors.tuna.tsinghua.edu.cn/centos-stream/${EL_MAJOR}-stream/BaseOS/x86_64/os/repodata/repomd.xml"
+  bench_one ustc     "https://mirrors.ustc.edu.cn/centos-stream/${EL_MAJOR}-stream/BaseOS/x86_64/os/repodata/repomd.xml"
+  bench_one aliyun   "https://mirrors.aliyun.com/centos-stream/${EL_MAJOR}-stream/BaseOS/x86_64/os/repodata/repomd.xml"
+  bench_one huawei   "https://mirrors.huaweicloud.com/centos-stream/${EL_MAJOR}-stream/BaseOS/x86_64/os/repodata/repomd.xml"
+  bench_one official "https://mirrors.centos.org/metalink?repo=centos-baseos-${EL_MAJOR}-stream&arch=x86_64"
+  log "  ${C_B}官方源（本机实测 BaseOS）${C_N}"
+  bench_menu_line 1 "腾讯云 " tencent  "mirrors.tencentyun.com" "$(current_os_mirror)"
+  bench_menu_line 2 "清华   " tuna     "mirrors.tuna.tsinghua.edu.cn" "$(current_os_mirror)"
+  bench_menu_line 3 "中科大 " ustc     "mirrors.ustc.edu.cn" "$(current_os_mirror)"
+  bench_menu_line 4 "阿里云 " aliyun   "mirrors.aliyun.com" "$(current_os_mirror)"
+  bench_menu_line 5 "华为云 " huawei   "mirrors.huaweicloud.com" "$(current_os_mirror)"
+  bench_menu_line 6 "官方   " official "mirrors.centos.org/metalink" "$(current_os_mirror)"
 }
 
 # ---------------------------------------------------------------------------
@@ -1374,26 +2271,72 @@ security_channel() {
 #  通道二：版本升级（换 minor）
 # ===========================================================================
 check_target_available() {
-  local cand
+  local cand rc
   step "目标分支可得性"
   info "查 php-common 候选版本（只读 remi 仓库，最多 60s；超时则跳过本项检查）"
   cand=$(candidate_php_common)
-  log "  仓库最新 php-common: ${cand:-<查询失败或超时>}"
+  log "  稳定仓库最新 php-common: ${cand:-<查询失败或超时>}"
+
+  # RC 单独报，且**只报不装**。用户在 Remi 博客看到的版本号常是 RC，
+  # 不说清楚就会以为"官网有 8.5.12 了，这脚本怎么查不到"。
+  rc=$(candidate_rc_php_common)
+  if [ -n "$rc" ]; then
+    log "  ${C_Y}测试仓库 RC${C_N}   : $rc  ${C_D}（Remi 明确标注不适合生产）${C_N}"
+  else
+    log "  ${C_D}测试仓库 RC   : 无${C_N}"
+  fi
 
   if [ -z "$cand" ]; then
-    warn "查不到候选版本：网络慢、镜像同步延迟，或 ${REPO_ARGS[*]} 未真正启用"
+    warn "查不到稳定版候选：网络慢、镜像同步延迟，或 ${REPO_ARGS[*]} 未真正启用"
     warn "这项只是预检，跳过不影响后续；实际升级时 dnf 会自己算依赖并给出结论"
     return 1
   fi
+
+  # 稳定版分支判断（原有逻辑）
   case "$cand" in
-    "$TARGET".*) ok "仓库已提供 PHP $TARGET（$cand）"; return 0 ;;
+    "$TARGET".*) ok "稳定仓库已提供 PHP $TARGET（$cand）" ;;
     *)
-      bad "仓库最新为 $cand，不是 $TARGET 分支"
+      bad "稳定仓库最新为 $cand，不是 $TARGET 分支"
       log "${C_D}  常见原因：remi-release 太旧（不认 php:remi-$TARGET）→ $PM update remi-release -y${C_N}"
       log "${C_D}  或该 el${EL_MAJOR} 版本已不再由 Remi 构建 $TARGET${C_N}"
       return 1
       ;;
   esac
+
+  # 有 RC 就摆出来，并给一个**真实的选择入口** ——
+  # 不能只说"由你决定"却没地方选，那等于没实现。
+  if [ -n "$rc" ]; then
+    log ""
+    if [ "$USE_RC" = 1 ]; then
+      warn "已指定 --rc：将使用测试仓库的 $rc（RC 版，非生产）"
+    elif [ "$ASSUME_YES" = 1 ] || [ ! -t 0 ]; then
+      # 无人值守 / 非交互：绝不擅自上 RC，只提示怎么开
+      info "测试仓库有 $rc（比稳定版新），本次保持稳定版 $cand"
+      log "  ${C_D}要上 RC 请显式加 --rc：sudo $PROG --rc ...   （Remi 官方标注不适合生产）${C_N}"
+    else
+      info "测试仓库有 $rc，比稳定版 $cand 新"
+      log "  ${C_D}Remi 官方标注 RC 不适合生产；上生产建议等稳定版${C_N}"
+      drain_input
+      printf "  是否改用 RC 版本 $rc ？[y/N]: "
+      local ans=""
+      read -r ans || ans=""
+      case "$ans" in
+        y|Y|yes|YES)
+          USE_RC=1
+          warn "已选择 RC：$rc（Remi 标注不适合生产）"
+          # 仓库作用域必须重算，否则升级时仍只加载稳定仓库，RC 根本装不上
+          REPO_READY=""; META_READY=""; CAND_SUFFIX=""; CAND_VALUE=""
+          build_repo_args 2>/dev/null || true
+          ok "已把测试仓库纳入本次升级范围"
+          ;;
+        *)
+          info "保持稳定版 $cand（推荐）"
+          log "  ${C_D}稳定仓库出 $TARGET 正式包后跑 --security 即可${C_N}"
+          ;;
+      esac
+    fi
+  fi
+  return 0
 }
 
 switch_stream() {
@@ -1430,25 +2373,83 @@ switch_stream() {
   ok "stream 已切到 php:remi-$TARGET"
 }
 
+# 升级 PHP 时真正需要参与解析的仓库。
+#   · PHP 包本体和它的大部分依赖在 remi / remi-safe / remi-modular
+#   · 系统级依赖（openssl、libxml2、oniguruma 等）在 baseos / appstream
+#   · EPEL 只有极少数 php-* 依赖会用到；Aeris / ELRepo 基本与 PHP 无关，
+#     但 dnf 默认会把所有 enabled 仓库的元数据全拉一遍 —— 实测 EPEL 官方
+#     metalink 只有 11 kB/s，Aeris 6 kB/s，合计能把 upgrade 拖成半小时。
+# 所以这里显式列白名单，而不是让 dnf 全量加载。
+php_repo_scope() {
+  PHP_SCOPE_ARGS=()
+  local id avail
+
+  # 只对**真实存在**的仓库下发 --enablerepo/--disablerepo。
+  # 不这么做就会在每次升级前刷一屏 "No repository match: remi-php74" 之类的
+  # 警告（用户实测贴出来的那 7 行）—— dnf 对不存在的仓库名会抱怨，纯噪音。
+  avail=$(timeout "$RO_TIMEOUT" "$PM" "${RO_OPTS[@]}" repolist --all 2>/dev/null \
+            | awk 'NR>1 {print $1}' | sort -u)
+
+  for id in baseos appstream crb extras-common remi remi-safe remi-modular epel; do
+    [ "$PM" = dnf ] || continue
+    printf '%s\n' "$avail" | grep -qx "$id" && PHP_SCOPE_ARGS+=("--enablerepo=$id")
+  done
+
+  # 用户显式 --rc 时才把测试仓库纳入升级范围；
+  # 反过来，没开 --rc 就**显式关掉**测试仓库 —— php_repo_scope 没有用
+  # --disablerepo='*'，未列出的仓库保持其默认状态。万一测试仓库被手动启用过，
+  # 不显式关掉，RC 就会漏进生产升级。
+  if [ "$USE_RC" = 1 ]; then
+    for id in remi-modular-test remi-test; do
+      [ "$PM" = dnf ] || continue
+      printf '%s\n' "$avail" | grep -qx "$id" && PHP_SCOPE_ARGS+=("--enablerepo=$id")
+    done
+  else
+    for id in remi-modular-test remi-test "remi-php74-test" "remi-php80-test" \
+              "remi-php81-test" "remi-php82-test" "remi-php83-test" \
+              "remi-php84-test" "remi-php85-test"; do
+      [ "$PM" = dnf ] || continue
+      printf '%s\n' "$avail" | grep -qx "$id" && PHP_SCOPE_ARGS+=("--disablerepo=$id")
+    done
+  fi
+
+  # 其余一律关掉。同样只关真实存在的。
+  for id in aeris aeris-testing \
+            elrepo elrepo-testing elrepo-kernel elrepo-extras \
+            epel-next epel-next-testing epel-cisco-openh264 \
+            epel-debuginfo epel-source \
+            remi-php74 remi-php80 remi-php81 remi-php82 \
+            remi-php83 remi-php84 remi-php85; do
+    [ "$PM" = dnf ] || continue
+    printf '%s\n' "$avail" | grep -qx "$id" && PHP_SCOPE_ARGS+=("--disablerepo=$id")
+  done
+  return 0
+}
+
 upgrade_packages() {
   step "升级 PHP 包（通配 php*，不逐个列包名）"
 
+  php_repo_scope
+
   if [ "$MODE" != apply ]; then
     log "  预演输出（--assumeno，会中止，不落地）:"
-    timeout 300 "$PM" "${REPO_ARGS[@]}" --setopt=timeout=30 --setopt=retries=1 \
+    timeout 300 "$PM" "${PHP_SCOPE_ARGS[@]}" --setopt=timeout=30 --setopt=retries=1 \
+      --setopt=minrate=1024 \
       upgrade --assumeno 'php*' 2>&1 | sed 's/^/    /' | head -50
     log ""
     log "${C_D}  重点看 php-common 的版本变化：跨 minor 就是换分支，不是打补丁${C_N}"
+    log "${C_D}  已排除 Aeris / ELRepo / epel-next 等与 PHP 无关的仓库以提速${C_N}"
     return 0
   fi
 
+  info "只加载 remi / baseos / appstream / crb / epel，已跳过 Aeris、ELRepo、epel-next"
   local rc=0
   if [ "$PM" = dnf ] && [ -n "$CUR_STREAM" ]; then
     # 实时输出：dnf 自己的进度条能证明它没死，别再拿 tail 把过程吞掉
-    "$PM" "${REPO_ARGS[@]}" -y distro-sync 'php*'
+    "$PM" "${PHP_SCOPE_ARGS[@]}" -y distro-sync 'php*'
     rc=$?
   else
-    "$PM" "${REPO_ARGS[@]}" -y update 'php*'
+    "$PM" "${PHP_SCOPE_ARGS[@]}" -y update 'php*'
     rc=$?
   fi
   [ "$rc" -eq 0 ] || die "升级失败（rc=$rc）"
@@ -1670,8 +2671,34 @@ rollback() {
 # ---------------------------------------------------------------------------
 # 版本升级执行入口
 # ---------------------------------------------------------------------------
+#升级前提醒：EPEL 走官方 metalink 是"dnf 卡半小时"的头号原因。
+# 不用联网探测（省时间），只看 repo 文件里 EPEL 是不是还指着 metalink。
+warn_if_slow_epel() {
+  local m
+  m=$(current_epel_mirror)
+  case "$m" in
+    tuna|ustc|aliyun|huawei) return 0 ;;   # 已换国内镜像，不用啰嗦
+  esac
+
+  grep -qE '^[[:space:]]*metalink[[:space:]]*=' /etc/yum.repos.d/epel.repo 2>/dev/null || return 0
+
+  # 不要在这里断言"多快算慢""谁最快" —— 那是每台机器自己的事。
+  # 只陈述结构性的事实（metalink 要多一跳、由 dnf 自选节点），让用户去菜单 7 看本机实测。
+  warn "EPEL 还在用官方 metalink（$(sys_epel_label "$m")）"
+  log "  ${C_D}metalink 的含义：把选节点这件事交给 dnf，要多一跳解析 + 它可能选到境外节点${C_N}"
+  log "  ${C_D}PHP 升级用不到 EPEL 的包，但 dnf 仍会先拉它的元数据${C_N}"
+  log "  ${C_D}想确认慢不慢：菜单 9 系统源体检，或菜单 7 会当场实测各候选源${C_N}"
+  log "  ${C_D}已自动跳过与 PHP 无关的仓库（Aeris / ELRepo / epel-next 等）${C_N}"
+  log ""
+  return 0
+}
+
 version_channel() {
+  # 升级前后的版本号，函数作用域：确认段和最后的完成提示都要用。
+  #（不能在 if 块里 local，否则 -y 模式下确认块不执行，完成提示就取不到。）
+  local vcur="" vnew=""
   show_state
+  warn_if_slow_epel
   check_target_available || true
 
   if [ "$MODE" != apply ]; then
@@ -1685,15 +2712,36 @@ version_channel() {
     return 0
   fi
 
+  # 版本完全一致就不升级：白跑一次事务、还可能把服务动一遍，线上尤其不能这么干。
+  # 预演模式（plan）除外 —— 预演本来就不改系统，仍要显示对比信息。
+  if [ "$MODE" = apply ]; then
+    if ! php_upgrade_needed; then
+      ok "已是最新：本机 $(current_php_version)，仓库最新 $(target_php_version)，无需升级"
+      log "  ${C_D}想强制重装/修复扩展: sudo $PM reinstall 'php*'${C_N}"
+      return 0
+    fi
+  fi
+
   if [ "$ASSUME_YES" != 1 ] && [ -t 0 ]; then
     log ""
     # 分支没变的时候，别再说"升级到 X"——那会让人以为要跨大版本。
     # 实测踩过的场景：已在 remi-8.5，还提示"即将把 PHP 升级到 8.5"。
+    # 同时把**具体版本号**摆出来，否则"小版本更新"看不出到底从几升到几。
+    vcur=$(current_php_version)
+    vnew=$(target_php_version)
     if [ "$PM" = dnf ] && [ "$CUR_STREAM" = "remi-$TARGET" ]; then
-      info "当前已在 PHP $TARGET 分支（stream: $CUR_STREAM），本次只是分支内的小版本更新"
-      warn "即将更新 PHP $TARGET 及其扩展到仓库中的最新版本（$PRETTY_OS）"
+      info "当前已在 PHP $TARGET 分支（stream: $CUR_STREAM），本次是分支内小版本更新"
+      if [ -n "$vcur" ] && [ -n "$vnew" ]; then
+        warn "即将把 PHP 从 $vcur 更新到 $vnew（$PRETTY_OS）"
+      else
+        warn "即将更新 PHP $TARGET 及其扩展到仓库中的最新版本（$PRETTY_OS）"
+      fi
     else
-      warn "即将把 PHP 升级到 $TARGET（$PRETTY_OS），当前 stream: ${CUR_STREAM:-<无>}"
+      if [ -n "$vcur" ] && [ -n "$vnew" ]; then
+        warn "即将把 PHP 从 ${vcur:-未安装} 更新到 $vnew（$PRETTY_OS）"
+      else
+        warn "即将把 PHP 升级到 $TARGET（$PRETTY_OS），当前 stream: ${CUR_STREAM:-<无>}"
+      fi
     fi
     printf "继续？[y/N] "
     read -r ans
@@ -1720,7 +2768,17 @@ version_channel() {
 
   if verify; then
     log ""
-    ok "升级完成：PHP $TARGET"
+    # 完成提示必须给具体版本号。只说 "PHP 8.5" 看不出到底升到哪个 patch，
+    # 用户还得自己跑 `php --version` 核对（实测反馈）。
+    local vdone
+    vdone=$(current_php_version)
+    if [ -n "$vdone" ] && [ -n "$vcur" ] && [ "$vcur" != "$vdone" ]; then
+      ok "升级完成：PHP $vcur → $vdone"
+    elif [ -n "$vdone" ]; then
+      ok "升级完成：PHP $vdone"
+    else
+      ok "升级完成：PHP $TARGET"
+    fi
     [ "$PM" = dnf ] && log "  锁定分支防止误跨版本: $PM versionlock add 'php*'   # 需 dnf-plugins-core"
     log "  备份: $BACKUP_DIR"
     return 0
@@ -1743,6 +2801,11 @@ if [ "$INTERACTIVE" != 1 ]; then
     status)  show_state; exit 0 ;;
     nettest) nettest_action; exit 0 ;;
     mirror)  apply_mirror "$MIRROR"; exit 0 ;;
+    mirror-epel)
+      [ "$MIRROR" = official ] && { restore_epel_official; exit 0; }
+      apply_epel_mirror "$MIRROR"; exit 0 ;;
+    mirror-os) apply_os_mirror "$MIRROR"; exit 0 ;;
+    audit)   audit_sys_repos; exit 0 ;;
   esac
   ensure_repos
   detect_fpm_unit
@@ -1762,25 +2825,12 @@ while :; do
     status)
       show_state
       ;;
-    nettest)
-      nettest_action
-      ;;
     mirror)
       # 注意：main 在函数外，不能用 local
-      CURM=$(current_remi_mirror)
-      M_LBL=("1) 官方   rpms.remirepo.net" "2) 清华   mirrors.tuna.tsinghua.edu.cn" "3) 中科大 mirrors.ustc.edu.cn")
-      M_KEY=(official tuna ustc)
       log ""
-      log "  ${C_D}当前使用: $(mirror_label "$CURM")${C_N}"
+      show_remi_bench
       log ""
-      log "  ${C_B}选择要使用的 Remi 源${C_N}"
-      for MI in 0 1 2; do
-        if [ "${M_KEY[$MI]}" = "$CURM" ]; then
-          log "    ${M_LBL[$MI]}   ${C_G}← 当前${C_N}"
-        else
-          log "    ${M_LBL[$MI]}"
-        fi
-      done
+      log "  ${C_B}选择要使用的 Remi 源${C_N}  ${C_D}（耗时为本机刚才实测）${C_N}"
       log "    0) 返回"
       drain_input
       printf "请选择 [0-3]: "
@@ -1791,6 +2841,47 @@ while :; do
         3) apply_mirror ustc ;;
         *) info "已返回" ;;
       esac
+      ;;
+    mirror-epel)
+      # 注意：main 在函数外，不能用 local
+      log ""
+      show_epel_bench
+      log ""
+      log "  ${C_B}选择要使用的 EPEL 源${C_N}  ${C_D}（耗时为本机刚才实测）${C_N}"
+      log "    0) 返回"
+      drain_input
+      printf "请选择 [0-5]: "
+      read -r mc || exit 0
+      case "$mc" in
+        1) restore_epel_official ;;
+        2) apply_epel_mirror tuna ;;
+        3) apply_epel_mirror ustc ;;
+        4) apply_epel_mirror aliyun ;;
+        5) apply_epel_mirror huawei ;;
+        *) info "已返回" ;;
+      esac
+      ;;
+    mirror-os)
+      log ""
+      show_os_bench
+      log ""
+      log "  ${C_B}选择要使用的 CentOS 官方源${C_N}  ${C_D}（耗时为本机刚才实测 BaseOS）${C_N}"
+      log "    0) 返回"
+      drain_input
+      printf "请选择 [0-6]: "
+      read -r mc || exit 0
+      case "$mc" in
+        1) apply_os_mirror tencent ;;
+        2) apply_os_mirror tuna ;;
+        3) apply_os_mirror ustc ;;
+        4) apply_os_mirror aliyun ;;
+        5) apply_os_mirror huawei ;;
+        6) apply_os_mirror official ;;
+        *) info "已返回" ;;
+      esac
+      ;;
+    audit)
+      audit_sys_repos
       ;;
     security)
       ensure_repos
